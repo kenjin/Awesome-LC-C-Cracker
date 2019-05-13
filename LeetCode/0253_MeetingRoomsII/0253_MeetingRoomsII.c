@@ -14,55 +14,46 @@ Output: 1
 
 */
 
-/**
- * Definition for an interval.
- * struct Interval {
- *     int start;
- *     int end;
- * };
- */
-
-int compare(struct Interval* a, struct Interval* b)
+typedef struct roomInfo
 {
-    if (a->start == b->start)
-    {
-        return (a->end - b->end);
-    } else
-    {
-        return (a->start - b->start);
-    }
+	int start;
+	int end;
+}ROOM;
+
+int compare(const void *a, const void *b)
+{
+	int *n1 = *(int **)a;
+	int *n2 = *(int **)b;
+
+	return (n1[0] - n2[0]);
 }
 
-int minMeetingRooms(struct Interval* intervals, int intervalsSize) {
-    qsort(intervals, intervalsSize, sizeof(struct Interval), compare);
+int minMeetingRooms(int** intervals, int intervalsSize, int* intervalsColSize)
+{
+	qsort(intervals, intervalsSize, sizeof(int *), compare);
+	int roomSize = 0;
+	ROOM *r = malloc(sizeof(ROOM));
+	for (int i = 0; i < intervalsSize; i++)
+	{
+		int found = 0;
+		for (int x = 0; x < roomSize; x++)
+		{
+			if (intervals[i][0] >= r[x].end) /* Update room info */
+			{
+				r[x].end = intervals[i][1];
+				found = 1;
+				break;
+			}
+		}
+		if (!found)
+		{
+			roomSize++;
+			r = realloc(r, sizeof(ROOM)*roomSize);
+			r[roomSize-1].start = intervals[i][0];
+			r[roomSize-1].end = intervals[i][1];
+		}
+	}
 
-    struct Interval *roomSet = (struct Interval *)malloc(sizeof(struct Interval));
-    int rCtr = 0;
-    for (int curIdx = 0; curIdx < intervalsSize; curIdx++)
-    {
-        int combine = 0;
-        for (int setIdx = 0; setIdx < rCtr; setIdx++)
-        {
-            /* Can combine to the same set */
-            if (intervals[curIdx].start >= roomSet[setIdx].end)
-            {
-                combine = 1;
-                /* Update ending time */
-                roomSet[setIdx].end = intervals[curIdx].end;
-                //printf("Update setIdx=%d, [%d-%d]\n", setIdx, roomSet[setIdx].start, roomSet[setIdx].end);
-                break;
-            }
-        }
-
-        if (!combine)
-        {
-            rCtr += 1;
-            roomSet = realloc(roomSet, sizeof(struct Interval) * rCtr);
-            roomSet[rCtr-1].start = intervals[curIdx].start;
-            roomSet[rCtr-1].end = intervals[curIdx].end;
-            //printf("Add rCtr=%d, [%d-%d]\n", rCtr-1, roomSet[rCtr-1].start, roomSet[rCtr-1].end);
-        }
-    }
-
-    return rCtr;
+	free(r);
+	return roomSize;
 }
