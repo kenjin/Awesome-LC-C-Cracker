@@ -45,7 +45,7 @@ bool search(char** board, char *word, int word_idx, int cur_row, int cur_col, in
 	return ret;
 }
 
-bool exist(char** board, int boardRowSize, int boardColSize, char* word) {
+bool exist(char** board, int boardRowSize, int *boardColSize, char* word) {
 
 	int len = strlen(word);
 
@@ -56,9 +56,9 @@ bool exist(char** board, int boardRowSize, int boardColSize, char* word) {
 
 	for (int i = 0; i < boardRowSize; i++)
 	{
-		for (int j = 0; j < boardColSize; j++)
+		for (int j = 0; j < boardColSize[0]; j++)
 		{
-			if (search(board, word, 0, i, j, boardRowSize, boardColSize, len) == true)
+			if (search(board, word, 0, i, j, boardRowSize, boardColSize[0], len) == true)
 				return true;
 		}
 	}
