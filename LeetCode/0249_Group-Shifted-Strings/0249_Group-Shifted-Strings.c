@@ -14,7 +14,6 @@ typedef struct
 	HASH_LIST **list
 } HASH;
 
-/** Initialize your data structure here. */
 
 HASH_LIST* createNewNode()
 {
@@ -31,7 +30,7 @@ HASH* hashCreate(int size)
 	hash->list = malloc(sizeof(HASH_LIST*)*size);
 	for (int i = 0; i < size; i++)
 	{
-		/* Pre-create one node for each bucket */
+		// Pre-create one node for each bucket
 		hash->list[i] = createNewNode();
 	}	
 	return hash;
@@ -54,7 +53,8 @@ int doHash(int mod, char *s, int len)
 
 void remapString(char *dst, char *src, int len)
 {
-	// remap the first char to 'a': "bd" -> 'b'-1 'd'-1 -> "ac"
+	// recude the string to let the first char start from 'a'
+	// bd -> ac, ba -> az
 	int diff = src[0] - 'a';
 	for (int x = 0; x < len; x++)
 	{
@@ -66,7 +66,6 @@ void remapString(char *dst, char *src, int len)
 	}
 }
 
-/** value will always be non-negative. */
 void hashInsert(HASH* obj, char *str, int groupIdx)
 {
 	int len = strlen(str);
@@ -74,14 +73,14 @@ void hashInsert(HASH* obj, char *str, int groupIdx)
 	remapString(newStr, str, len);
 
 	int hashIndex = doHash(obj->mod, newStr, len);
-	HASH_LIST *newNode = createNewNode(); /* Create node */
-	if (obj->list[hashIndex]->next == NULL) /* Bucket is empty, first time put */
+	HASH_LIST *newNode = createNewNode();
+	if (obj->list[hashIndex]->next == NULL) // Bucket is empty, first time put
 	{
 		obj->list[hashIndex]->len = len;
 		obj->list[hashIndex]->groupIdx = groupIdx;
 		obj->list[hashIndex]->str = newStr;
 		obj->list[hashIndex]->next = newNode;
-	} else /* Bucket is not empty*/
+	} else // Bucket is not empty
 	{   
 		HASH_LIST *tmp = obj->list[hashIndex];
 		while (tmp->next != NULL)
@@ -95,6 +94,8 @@ void hashInsert(HASH* obj, char *str, int groupIdx)
 	}
 }
 
+// return group index if we find the val from hash table.
+// otherwise return -1
 int hashFind(HASH* obj, char *str) 
 {
 	int len = strlen(str);
@@ -121,7 +122,6 @@ int hashFind(HASH* obj, char *str)
 		tmp = tmp->next;                
 	}
 
-	// printf(" Not found %s\n", str);
 	free(reduceStr);
 	return -1;
 }
@@ -149,7 +149,7 @@ void hashFree(HASH* obj)
  */
 char *** groupStrings(char ** strings, int stringsSize, int* returnSize, int** returnColumnSizes)
 {
-	HASH *h = hashCreate(76);
+	HASH *h = hashCreate(76); // (0-25)/(0-25)/(0-25)
 	char ***ret = malloc(sizeof(char **));
 	*returnSize = 0;
 	*returnColumnSizes = calloc(1, sizeof(int));
