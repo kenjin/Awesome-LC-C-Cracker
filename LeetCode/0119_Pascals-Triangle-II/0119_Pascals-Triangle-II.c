@@ -11,6 +11,28 @@ Note that the row index starts from 0.
  */
 int* getRow(int rowIndex, int* returnSize)
 {
+	int *res = calloc(rowIndex+1, sizeof(int));
+	int *tmp = calloc(rowIndex+1, sizeof(int));
+	tmp[0] = 1;
+	for (int level = 0; level <= rowIndex; level++)
+	{        
+		res[0] = res[level] = 1;
+		if (level >= 1)
+		{
+			for (int x = 1; x <= level/2; x++)
+			{
+				res[x] = res[level-x] = tmp[x-1] + tmp[x];
+			}
+		}
+		memcpy(tmp, res, sizeof(int)*(level+1));
+	}
+
+	*returnSize = rowIndex+1;
+	return res;
+}
+#if 0
+int* getRow(int rowIndex, int* returnSize)
+{
 	int *ret = calloc((rowIndex+1), sizeof(int));
 	*returnSize = rowIndex+1;
 	ret[0] = 1;
@@ -24,3 +46,4 @@ int* getRow(int rowIndex, int* returnSize)
 
 	return ret;
 }
+#endif
