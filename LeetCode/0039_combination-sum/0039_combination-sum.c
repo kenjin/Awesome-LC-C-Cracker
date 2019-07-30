@@ -13,6 +13,7 @@ void combinationSumHelper(int *num, int numSize, int *tmp, int tmpSize, int curI
 		(*retColSize)[*retSize] = tmpSize;
 		memcpy((*ret)[*retSize], tmp, sizeof(int)*tmpSize);
 		*retSize += 1;
+		return;
 	}
 
 	for (int i = curIdx; i < numSize; i++)
