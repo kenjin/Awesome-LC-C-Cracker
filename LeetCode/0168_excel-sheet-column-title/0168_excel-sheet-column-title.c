@@ -1,50 +1,43 @@
-#define MALLOC_UNIT 12
+#define MALLOC_UNIT 10
 
-char * convertToTitle(int n)
-{    
+char* reverseString(char *s)
+{
+	int head = 0, tail = strlen(s)-1;
+	while (head < tail)
+	{
+		char tmp = s[head];
+		s[head] = s[tail];
+		s[tail] = tmp;
+
+		head++;
+		tail--;
+	}
+
+	return s;
+}
+
+char* convertToTitle(int n)
+{
 	char *ret = calloc(MALLOC_UNIT, sizeof(char));
-	int retCtr = 0;
-	for (int i = 6; i >= 0; i--)
+	int i = 0;
+	while (n > 0) 
 	{
-		int base = pow(26, i);
-		if (n/base > 0)
+		int rem = n % 26;
+		if (rem == 0) 
 		{
-			ret[retCtr] = n/base + 'A' - 1;
-			n %= base;
-		} else
-		{
-			if (retCtr > 0 && ret[retCtr-1] >= 'A')
-			{
-				ret[retCtr-1] -= 1;
-				ret[retCtr] = 'Z';
-			} else
-			{ 
-				ret[retCtr] = 'A' - 1;
-			} 
-
-		}
-		retCtr++;
-	}
-
-	for (int i = 0; i < retCtr; i++)
-	{
-		if (i > 0 && ret[i-1] >= 'A' && ret[i] < 'A')
-		{
-			ret[i-1] -= 1;
+			n = n / 26 - 1;
 			ret[i] = 'Z';
-		}
-	}
-
-	int start = 0;
-	for (int i = 0; i < retCtr; i++)
-	{
-		if (ret[i] >= 'A')
+			i++;
+		} else 
 		{
-			start = i;
-			break;
+			n = n / 26;
+			ret[i] = 'A' + rem - 1;
+			i++;
 		}
-	}
-	return &(ret[start]);
+	}    
+
+	ret = reverseString(ret);
+	return ret;
 }
 
 
