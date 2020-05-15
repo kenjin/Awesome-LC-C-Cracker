@@ -1,88 +1,66 @@
-#define LETTERS_NUM 26
 
-typedef struct trieNode 
-{
-	char isEnd;
-	struct trieNode  *charNode[LETTERS_NUM];
+typedef struct __trie {
+	struct __trie *chd[26];
+	char is_set;
 } Trie;
 
 /** Initialize your data structure here. */
 
-Trie* trieCreate()
-{
-	Trie *newNode = calloc(1, sizeof(Trie));
-	return newNode;
+Trie* trieCreate() {
+	Trie *obj = calloc(1, sizeof(Trie));
+	return obj;
 }
 
 /** Inserts a word into the trie. */
-void trieInsert(Trie* head, char * word) 
+void trieInsert(Trie* obj, char * word)
 {
-	while (*word)
-	{
-		if (head->charNode[*word -'a'] == NULL)
-		{
-			head->charNode[*word -'a'] = trieCreate();
+	Trie *root = obj;
+	while (*word) {
+		char cur = *word - 'a';
+		if (NULL == root->chd[cur]) {
+			root->chd[cur] = trieCreate();
 		}
-
-		head = head->charNode[*word -'a'];        
+		root = root->chd[cur];
 		word++;
-	}    
-
-	head->isEnd = 1;
+	}
+	root->is_set = 1;
 }
 
-/** Returns if the word is in the trie. */
-bool trieSearch(Trie* head, char * word) 
+/* Return NULL pointer if can't find prefix string, otherwise return prefix leaf node */
+static inline Trie* trie_get_prefix_leaf(Trie* obj, char * prefix)
 {
-	if (head == NULL)  
-	{
-		return false;
+	Trie *root = obj;
+	while (*prefix) {
+		root = root->chd[*prefix - 'a'];
+		if (!root)
+			return NULL;
+		prefix++;
 	}
-
-	while (*word)
-	{
-		head = head->charNode[*word - 'a'];        
-		if (head == NULL)
-		{
-			return false;
-		}
-		word++;
-	}
-	return (head->isEnd ? true : false);
+	return root;
 }
 
 /** Returns if there is any word in the trie that starts with the given prefix. */
-bool trieStartsWith(Trie* head, char * prefix) 
+bool trieStartsWith(Trie* obj, char * prefix)
 {
-	if (head == NULL)  
-	{
-		return false;
-	}
-
-	while (*prefix)
-	{
-		head = head->charNode[*prefix - 'a'];        
-		if (head == NULL)
-		{
-			return false;
-		}
-		prefix++;
-	}
-	return true;
+	Trie *leaf = trie_get_prefix_leaf(obj, prefix);
+	return leaf ? true : false;
 }
 
-void trieFree(Trie* head) 
+/** Returns if the word is in the trie. */
+bool trieSearch(Trie* obj, char * word)
 {
-	if (head == NULL)
-	{
-		return;
-	}
+	Trie *leaf = trie_get_prefix_leaf(obj, word);
+	return (leaf && leaf->is_set) ? true : false;
+}
 
-	for (int i = 0; i < LETTERS_NUM; i++)
-	{
-		trieFree(head->charNode[i]);
-	}
-	free(head);
+void trieFree(Trie* obj)
+{
+	if (!obj)
+		return;
+
+	for (int i = 0; i < 26; i++)
+		trieFree(obj->chd[i]);
+	free(obj);
 }
 
 /**
