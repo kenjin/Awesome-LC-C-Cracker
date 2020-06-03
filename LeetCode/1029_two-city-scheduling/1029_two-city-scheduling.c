@@ -1,30 +1,17 @@
-
-int compare(const void *a, const void *b)
+static int compare(void *a, void *b)
 {
-	return *(int *)a - *(int *)b;
+    int *n1 = *(int **) a;
+    int *n2 = *(int **) b;
+    return (n1[0] - n1[1]) - (n2[0] - n2[1]);
 }
 
-int twoCitySchedCost(int** costs, int costsSize, int* costsColSize)
+int twoCitySchedCost(int **costs, int costsSize, int *costsColSize)
 {
-	int sum = 0;
-	for (int i = 0; i < costsSize; i++)
-	{
-		sum += costs[i][0];
-	}
+    qsort(costs, costsSize, sizeof(int *), compare);
 
-	int *diff = malloc(sizeof(int)*costsSize);
-	for (int i = 0; i < costsSize; i++)
-	{
-		diff[i] = costs[i][1] - costs[i][0];
-	}
+    int ret = 0;
+    for (int i = 0; i < costsSize / 2; i++)
+        ret += costs[i][0] + costs[i + costsSize / 2][1];
 
-	qsort(diff, costsSize, sizeof(int), compare);
-	for (int i = 0; i < costsSize/2; i++)
-	{
-		sum += diff[i];
-	}
-
-	free(diff);
-	return sum;
+    return ret;
 }
-
