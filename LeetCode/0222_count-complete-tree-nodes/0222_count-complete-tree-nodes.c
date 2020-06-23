@@ -6,46 +6,39 @@
  *     struct TreeNode *right;
  * };
  */
-int leftmost(struct TreeNode* root) 
+int leftmost(struct TreeNode *root)
 {
-	int count = 0;
-	while (root != NULL) 
-	{
-		count ++;
-		root = root->left;
-	}
-	return count;
+    int lv = 0;
+    while (root != NULL) {
+        lv++;
+        root = root->left;
+    }
+    return lv;
 }
 
-int countNodesHelper(struct TreeNode* root, int level)
+int countNodes_helper(struct TreeNode *root, int level)
 {
-	if (root == NULL)
-	{
-		return 0;
-	}
+    if (root == NULL)
+        return 0;
 
-	struct TreeNode *l = root, *r = root;
-	// go to left-most child
-	int r_leftMost_lv = leftmost(root->right);
-	int l_leftMost_lv = level-1;
+    struct TreeNode *l = root, *r = root;
+    int leftmost_lv_lchild = level - 1;
+    int leftmost_lv_rchild = leftmost(root->right);
+    int count = 1; /* count current node */
 
-	int count = 1;    
-	if (r_leftMost_lv == l_leftMost_lv) 
-	{
-		count += (1 << l_leftMost_lv) - 1;
-		count += countNodesHelper(root->right, r_leftMost_lv);
-	} else
-	{
-		count += (1 << r_leftMost_lv) - 1;
-		count += countNodesHelper(root->left, l_leftMost_lv);
-	}
+    if (r_leftmost_lv == l_leftmost_lv) {
+        count += (1 << l_leftmost_lv) - 1;
+        count += countNodes_helper(root->right, r_leftmost_lv);
+    } else {
+        count += countNodes_helper(root->left, l_leftmost_lv);
+        count += (1 << r_leftmost_lv) - 1;
+    }
 
-	return count;
+    return count;
 }
 
-int countNodes(struct TreeNode* root)
+int countNodes(struct TreeNode *root)
 {
-	int level = leftmost(root);
-	return countNodesHelper(root, level);
+    int level = leftmost(root);
+    return countNodes_helper(root, level);
 }
-
