@@ -8,25 +8,20 @@
  */
 
 
-int sumNumbersHelper(struct TreeNode* root, int cur)
+int sumNumbersHelper(struct TreeNode *root, int cur)
 {
-	if (NULL == root)
-	{
-		return 0;
-	}
+    if (!root)
+        return 0;
 
-	cur = cur*10 + root->val;
-	if (NULL == root->left && NULL == root->right)
-	{
-		return cur;
-	}
+    cur = cur * 10 + root->val;
+    if (NULL == root->left && NULL == root->right)
+        return cur;
 
-	return sumNumbersHelper(root->left, cur) + sumNumbersHelper(root->right, cur);
+    return sumNumbersHelper(root->left, cur) +
+           sumNumbersHelper(root->right, cur);
 }
 
-int sumNumbers(struct TreeNode* root)
+int sumNumbers(struct TreeNode *root)
 {
-	return sumNumbersHelper(root, 0);
+    return sumNumbersHelper(root, 0);
 }
-
-
