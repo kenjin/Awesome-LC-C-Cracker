@@ -1,206 +1,185 @@
-typedef struct nodeInfo NODE;
-struct nodeInfo
-{
-	char src[4];
-	int idx;    // the first index of tickets that "from" is src
-	int size;   // the total size of tickets that "from" is src
-	NODE *next;
-};
+#define HASH_SIZE 10000
+#define IATA_CODE_SIZE 4
+#define START_IATA_CODE "JFK"
 
-typedef struct hash
-{
-	int bucketSize;
-	int mod;
-	NODE **bucket;
+typedef struct __bucket_node {
+    char src[IATA_CODE_SIZE];
+    int idx;  /* the first index of tickets that "from" is src */
+    int size; /* the total size of tickets that "from" is src */
+    struct __bucket_node *next;
+} NODE;
+
+typedef struct {
+    int size;
+    NODE **bucket;
 } HASH;
 
-NODE* createNode()
+static inline NODE *create_node()
 {
-	NODE *newNode = calloc(1, sizeof(NODE));
-	newNode->next = NULL;
-	return newNode;
+    NODE *new_node = calloc(1, sizeof(NODE));
+    new_node->size = 1;
+    return new_node;
 }
 
-HASH* createHash(int size)
+static inline HASH *hash_init(int size)
 {
-	HASH *obj = malloc(sizeof(HASH));
-	obj->bucketSize = size;
-	obj->mod = size;
-	obj->bucket = malloc(sizeof(NODE*)*size);
-	for (int i = 0; i < size; i++)
-	{
-		obj->bucket[i] = createNode();
-	}        
-	return obj;
+    HASH *hash = calloc(1, sizeof(HASH));
+    hash->size = size;
+    hash->bucket = calloc(size, sizeof(NODE *));
+    return hash;
 }
 
-void destroyHash(HASH *obj)
+static inline int do_hash(HASH *obj, char *str)
 {
-	for (int i = 0; i < obj->bucketSize; i++)
-	{
-		NODE *delNode = obj->bucket[i];
-		while (delNode != NULL)
-		{
-			NODE *tmpDel = delNode->next;            
-			free(delNode);
-			delNode = tmpDel;
-		}
-	}
-	free(obj);
+    size_t hash = 5381;
+    while (*str)
+        hash = 33 * hash ^ (unsigned char) *str++;
+
+    return hash % obj->size;
 }
 
-int dohash(HASH *obj, char *str, int keyLen)
+static void hash_insert(HASH *obj, char *key, int idx)
 {
-	size_t hash = 5381;
-	while (*str)
-	{
-		hash = 33 * hash ^ (unsigned char) *str++;
-	}
-	return hash % obj->mod;
+    int hash_idx = do_hash(obj, key);
+    NODE *tmp = obj->bucket[hash_idx];
+    NODE *newone = create_node();
+    newone->idx = idx;
+    strncpy(newone->src, key, IATA_CODE_SIZE - 1);
+    if (!tmp) {
+        obj->bucket[hash_idx] = newone;
+        return;
+    }
+    /* exist at least one node in current bucket */
+    NODE *prev = NULL;
+    while (tmp != NULL) {
+        if (!strncmp(tmp->src, key, IATA_CODE_SIZE - 1)) {
+            tmp->size++;
+            return;
+        }
+        prev = tmp;
+        tmp = tmp->next;
+    }
+    prev->next = newone;
 }
 
-bool findHash(HASH *obj, char *key, int *ret)
+static bool hash_find(HASH *obj, char *key, int *ret)
 {
-	int keyLen = strlen(key);
-	int hashIdx = dohash(obj, key, keyLen);
-	NODE *tmp = obj->bucket[hashIdx];    
-	while (tmp != NULL)
-	{
-		if (0 == strcmp(tmp->src, key))        
-		{
-			ret[0] = tmp->idx;
-			ret[1] = tmp->size;            
-			return true;
-		}
-		tmp = tmp->next;
-	}
-	return false;
+    int hash_idx = do_hash(obj, key);
+    NODE *tmp = obj->bucket[hash_idx];
+    while (tmp != NULL) {
+        if (!strncmp(tmp->src, key, IATA_CODE_SIZE - 1)) {
+            ret[0] = tmp->idx;
+            ret[1] = tmp->size;
+            return true;
+        }
+        tmp = tmp->next;
+    }
+
+    return false;
 }
 
-void addHash(HASH *obj, char *key, int idx)
+static void hash_free(HASH *obj)
 {
-	int keyLen = strlen(key);
-	int hashIdx = dohash(obj, key, keyLen);
-
-	if (obj->bucket[hashIdx]->next == NULL)
-	{
-		strcpy(obj->bucket[hashIdx]->src, key);
-		obj->bucket[hashIdx]->idx =idx;
-		obj->bucket[hashIdx]->size = 1;
-		obj->bucket[hashIdx]->next = createNode();
-	} else
-	{
-		NODE *tmp = obj->bucket[hashIdx];
-		while (tmp->next != NULL)
-		{
-			if (0 == strcmp(tmp->src, key))
-			{
-				tmp->size++;
-				return;
-			}
-			tmp = tmp->next;
-		}
-		strcpy(tmp->src, key);
-		tmp->idx = idx;
-		tmp->size = 1;
-		tmp->next = createNode();
-	}
+    for (int i = 0; i < obj->size; i++) {
+        NODE *tmp = obj->bucket[i];
+        while (tmp) {
+            NODE *delNode = tmp;
+            tmp = tmp->next;
+            free(delNode);
+        }
+    }
+    free(obj);
 }
 
-bool IATA_dfs(HASH *h, char ***tickets, char **ret, int retSize, char *target, int idx, char *check)
+bool iata_dfs(HASH *h,
+              char ***tickets,
+              char **ret,
+              int ret_sz,
+              char *target,
+              int idx,
+              char *check)
 {
-	if (idx == retSize)
-	{        
-		return true;
-	}
+    if (idx == ret_sz)
+        return true;
 
-	/*
-	 * findRet[0]: first index of tickets that "from" is target
-	 * findRet[1]: total size of tickets that "from" is target
-	 */
-	int findRet[2] = {0};
-	if (false == findHash(h, target, findRet))
-	{
-		return false;
-	}
+    /**
+     *  @findRet[0]: first index of tickets that "from" is target
+     *  @findRet[1]: total size of tickets that "from" is target
+     */
+    int find_ret[2] = {0};
+    if (!hash_find(h, target, find_ret))
+        return false;
 
-	int i = findRet[0];
-	bool found = false;
-	while (i < findRet[0]+findRet[1])
-	{        
-		if (check[i])
-		{
-			i++;
-			continue;
-		}
-		// update check flag
-		check[i] = 1;                
-		if (true == IATA_dfs(h, tickets, ret, retSize, tickets[i][1], idx+1, check))
-		{            
-			found = true;
-			break;
-		}
-		// release check flag
-		check[i] = 0;
-		i++;
-	}
-	if (!found)
-	{
-		return false;
-	}
+    int i = find_ret[0];
+    bool found = false;
+    while (i < find_ret[0] + find_ret[1]) {
+        if (check[i]) {
+            i++;
+            continue;
+        }
+        /* update check flag */
+        check[i] = 1;
 
-	ret[idx] = calloc(4, sizeof(char));
-	strcpy(ret[idx], tickets[i][1]);
-	return true;
+        /* dfs */
+        if (iata_dfs(h, tickets, ret, ret_sz, tickets[i][1], idx + 1, check)) {
+            found = true;
+            break;
+        }
+
+        /* recover check flag */
+        check[i++] = 0;
+    }
+
+    if (!found)
+        return false;
+
+    ret[idx] = calloc(IATA_CODE_SIZE, sizeof(char));
+    strcpy(ret[idx], tickets[i][1]);
+    return true;
 }
-
 
 int compare(const void *a, const void *b)
 {
-	const char **s1 = *(char ***)a;
-	const char **s2 = *(char ***)b;
+    const char **s1 = *(char ***) a;
+    const char **s2 = *(char ***) b;
 
-	int ret = strcmp(s1[0], s2[0]);
-	if (0 == ret)
-	{
-		return strcmp(s1[1], s2[1]);
-	}
-	return ret;
+    int ret = strcmp(s1[0], s2[0]);
+    return (!ret ? strcmp(s1[1], s2[1]) : ret);
 }
 
-char ** findItinerary(char *** tickets, int ticketsSize, int* ticketsColSize, int* returnSize)
-{   
-	// Sort all tickets pair
-	qsort(tickets, ticketsSize, sizeof(char *), compare);
+char **findItinerary(char ***tickets,
+                     int ticketsSize,
+                     int *ticketsColSize,
+                     int *returnSize)
+{
+    /* Sort all tickets pair */
+    qsort(tickets, ticketsSize, sizeof(char *), compare);
 
-	// Create hash data sructure
-	HASH *h = createHash(ticketsSize*2);    
+    /* Create hash data sructure */
+    HASH *h = hash_init(HASH_SIZE);
 
-	// Use check pointer to record the tickets[i] is visited(or banned)
-	char *check = calloc(ticketsSize, sizeof(char));   
+    /* Use check pointer to record the tickets[i] is visited(or banned) */
+    char *check = calloc(ticketsSize, sizeof(char));
 
-	// Add to hash
-	for (int i = 0; i < ticketsSize; i++)
-	{
-		addHash(h, tickets[i][0], i);
-	}
+    /* Add to hash */
+    for (int i = 0; i < ticketsSize; i++)
+        hash_insert(h, tickets[i][0], i);
 
-	// Init return variable
-	*returnSize = ticketsSize + 1;
-	char **ret = malloc(sizeof(char *)*(*returnSize));
+    /* Init return variable */
+    *returnSize = ticketsSize + 1;
+    char **ret = malloc(sizeof(char *) * (*returnSize));
 
-	// Init start from "JFK"
-	char srcTmp[4] = {0};
-	strcpy(srcTmp, "JFK");
-	ret[0] = calloc(4, sizeof(char));
-	strcpy(ret[0], srcTmp);
+    /* Init node start from "JFK" */
+    char start_code[IATA_CODE_SIZE] = {0};
+    strcpy(start_code, START_IATA_CODE);
+    ret[0] = calloc(IATA_CODE_SIZE, sizeof(char));
+    strcpy(ret[0], start_code);
 
-	// DFS to update the result
-	IATA_dfs(h, tickets, ret, *returnSize, srcTmp, 1, check);
+    /* DFS to update the result */
+    iata_dfs(h, tickets, ret, *returnSize, start_code, 1, check);
 
-	// Free
-	free(check);
-	destroyHash(h);
-	return ret;
+    /* release memory*/
+    free(check);
+    hash_free(h);
+    return ret;
 }
-
