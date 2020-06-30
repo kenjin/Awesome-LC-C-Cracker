@@ -1,113 +1,94 @@
-typedef struct trieNode
-{
-	char *str;
-	struct trieNode *child[26];
-}TRIE;
 
+typedef struct __trie {
+    char *str;
+    struct __trie *child[26];
+} TRIE;
 
-TRIE* createNode(char c)
+static inline TRIE *create_node()
 {
-	TRIE *newNode = calloc(1, sizeof(TRIE));
-	return newNode;
+    return calloc(1, sizeof(TRIE));
 }
 
-void freeTrie(TRIE *t)
+static void free_trie(TRIE *t)
 {
-	if (NULL == t)
-	{
-		return;
-	}
+    if (!t)
+        return;
 
-	for (int i = 0; i < 26; i++)
-	{
-		freeTrie(t->child[i]);
-	}
-	free(t);
+    for (int i = 0; i < 26; i++)
+        free_trie(t->child[i]);
+
+    free(t);
 }
 
-char findTrie(TRIE *t, char *s)
+static void add_trie(TRIE *head, char *str)
 {
-	TRIE *head = t;
-	while (*s)
-	{
-		int idx = *s - 'a';
-		if (head->child[idx] == NULL)
-		{
-			return 0;        
-		}
-		head = head->child[idx];
-		s++;
-	}
-	return 1;
+    char *s = str;
+    while (*s) {
+        int idx = *s - 'a';
+        if (!head->child[idx])
+            head->child[idx] = create_node();
+        head = head->child[idx];
+        s++;
+    }
+
+    head->str = str;
 }
 
-void updateTrie(TRIE *t, char *str)
+void dfs(TRIE *t,
+         char **board,
+         int r_sz,
+         int c_sz,
+         int cur_row,
+         int cur_col,
+         char **ret,
+         int *ret_sz)
 {
-	TRIE *head = t;
-	char *s = str;
-	while (*s)
-	{
-		int idx = *s - 'a';
-		if (head->child[idx] == NULL)
-		{
-			head->child[idx] = createNode(*s);            
-		}
-		head = head->child[idx];
-		s++;
-	}
+    if (cur_row == r_sz || cur_col == c_sz || cur_row < 0 ||
+        cur_col < 0 ||                   /* Exceed boundary */
+        board[cur_row][cur_col] == -1 || /* Current board has been visited */
+        !(t->child[board[cur_row][cur_col] -
+                   'a'])) /* This string path is not in the trie */
+        return;
 
-	head->str = str;
-}
+    t = t->child[board[cur_row][cur_col] - 'a'];
+    if (t->str) {
+        ret[*ret_sz] = t->str;
+        *ret_sz += 1;
+        t->str = NULL;
+    }
 
-void DFS(TRIE *t, char** board, int rSize, int cSize, int curRow, int curCol, char **ret, int* returnSize)
-{
-	if (curRow == rSize || curCol == cSize || curRow < 0 || curCol < 0 ||  // Exceed Limit
-			board[curRow][curCol] == -1 || // Has been visited
-			t->child[board[curRow][curCol] - 'a'] == NULL) // This path is not in the words
-	{
-		return;
-	}
+    char dir[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    char tmp = board[cur_row][cur_col];
+    board[cur_row][cur_col] =
+        -1; /* tag to -1 to indicate this coordinate was visited */
+    for (int x = 0; x < 4; x++)
+        dfs(t, board, r_sz, c_sz, cur_row + dir[x][0], cur_col + dir[x][1], ret,
+            ret_sz);
 
-	t = t->child[board[curRow][curCol] - 'a'];
-	if (t->str != NULL)
-	{        
-		ret[*returnSize] = t->str;
-		*returnSize += 1;
-		t->str = NULL;
-	}
-
-	char dir[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	char tmp = board[curRow][curCol];
-	board[curRow][curCol] = -1;
-	for (int x = 0; x < 4; x++)
-	{
-		DFS(t, board, rSize, cSize, curRow + dir[x][0], curCol + dir[x][1], ret, returnSize);
-	}
-	board[curRow][curCol] = tmp;
+    board[cur_row][cur_col] = tmp;
 }
 
 /**
  * Note: The returned array must be malloced, assume caller calls free().
  */
-char ** findWords(char** board, int boardSize, int* boardColSize, char ** words, int wordsSize, int* returnSize)
+char **findWords(char **board,
+                 int boardSize,
+                 int *boardColSize,
+                 char **words,
+                 int wordsSize,
+                 int *returnSize)
 {
-	TRIE *t = createNode(0);
-	for (int i = 0; i < wordsSize; i++)
-	{
-		updateTrie(t, words[i]);
-	}
+    TRIE *t = create_node();
+    for (int i = 0; i < wordsSize; i++)
+        add_trie(t, words[i]);
 
-	char **ret = malloc(sizeof(char *)*wordsSize);
-	*returnSize = 0;
-	for (int i = 0; i < boardSize; i++)
-	{        
-		for (int j = 0; j < boardColSize[0]; j++)
-		{
-			DFS(t, board, boardSize, boardColSize[0], i, j, ret, returnSize);
-		}
-	}
+    char **ret = malloc(sizeof(char *) * wordsSize);
+    *returnSize = 0;
+    for (int i = 0; i < boardSize; i++) {
+        for (int j = 0; j < boardColSize[0]; j++)
+            dfs(t, board, boardSize, boardColSize[0], i, j, ret, returnSize);
+    }
 
-	freeTrie(t);
-	return ret;    
+    free_trie(t);
+    return ret;
 }
-
