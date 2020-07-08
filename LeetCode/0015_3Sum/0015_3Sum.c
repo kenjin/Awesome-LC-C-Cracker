@@ -1,115 +1,81 @@
 /**
-	Given an array nums of n integers, are there elements a, b, c in nums such that a + b + c = 0? 
-	Find all unique triplets in the array which gives the sum of zero.
+    Given an array nums of n integers, are there elements a, b, c in nums such
+   that a + b + c = 0?
+    Find all unique triplets in the array which gives the sum of zero.
 
-	Note:
-		The solution set must not contain duplicate triplets.
+    Note:
+        The solution set must not contain duplicate triplets.
 
-	Example:
-		Given array nums = [-1, 0, 1, 2, -1, -4],
-		A solution set is:
-			[
-  				[-1, 0, 1],
-    			[-1, -1, 2]
-			]
+    Example:
+        Given array nums = [-1, 0, 1, 2, -1, -4],
+        A solution set is:
+            [
+                [-1, 0, 1],
+                [-1, -1, 2]
+            ]
 */
+static int compare(void *a, void *b)
+{
+    return *(int *) a - *(int *) b;
+}
 
+
+#define MALLOC_UNIT 5000
 /**
  * Return an array of arrays of size *returnSize.
- * Note: The returned array must be malloced, assume caller calls free().
+ * The sizes of the arrays are returned as *returnColumnSizes array.
+ * Note: Both returned array and *columnSizes array must be malloced, assume
+ * caller calls free().
  */
-int partition(int *nums, int start, int end)
+int **threeSum(int *nums,
+               int numsSize,
+               int *returnSize,
+               int **returnColumnSizes)
 {
-	int pivot = nums[end];
-	int i = start-1, j, tmp;
-	for (j = start; j < end; j++)
-	{
-		if (nums[j] < pivot)
-		{
-			i++;
-			tmp = nums[i];
-			nums[i] = nums[j];
-			nums[j] = tmp;
-		}
-	}
-	i++;
-	tmp = nums[i];
-	nums[i] = nums[end];
-	nums[end] = tmp;    
-	return i;
-}
+    *returnSize = 0;
+    if (numsSize < 3) {
+        return NULL;
+    }
 
-void quicksort(int *nums, int front, int rear)
-{
-	if (front < rear)
-	{
-		int pivot = partition(nums, front, rear);
-		quicksort(nums, front, pivot-1);
-		quicksort(nums, pivot+1, rear);
-	}
-}
+    qsort(nums, numsSize, sizeof(int), compare);
 
-int** threeSum(int* nums, int numsSize, int* returnSize) {
+    int count = MALLOC_UNIT, ret_sz = 0;
+    int **ret = (int **) malloc(sizeof(int *) * count);
+    *returnColumnSizes = malloc(sizeof(int) * count);
+    for (int i = 0; i < numsSize - 2; i++) {
+        /* ignore the duplicate target */
+        if (i > 0 && nums[i] == nums[i - 1])
+            continue;
 
-	if (numsSize < 3)
-	{
-		return NULL;
-	}
+        int target = (-1) * (nums[i]), left = i + 1, right = numsSize - 1;
+        while (left < right) {
+            if (left > i + 1 && nums[left - 1] == nums[left]) {
+                left++;
+                continue;
+            }
 
-	// Sort nums
-	quicksort(nums, 0, numsSize-1);
-	
-	int count = 500, left, right, target;
-	int** ret = (int**)malloc(sizeof(int*)*count);
-	*returnSize = 0;
-
-	for (int i = 0; i < numsSize-2; i++)
-	{
-		// Avoid the duplicates
-		if (i > 0 && nums[i] == nums[i-1])
-		{
-			continue;
-		}
-
-		// Init
-		target = (-1)*(nums[i]);
-		left = i+1;
-		right = numsSize -1;        
-		while (left < right)
-		{
-			if (left > i+1 && nums[left-1] == nums[left])
-			{
-				left++;
-				continue;
-			}
-
-			if (nums[left] + nums[right] == target)
-			{
-				// Avoid the duplicates by checking two latest result
-				if ((*returnSize) == 0 || 
-						((*returnSize) > 0 && (nums[i] != ret[(*returnSize)-1][0] || nums[left] != ret[(*returnSize)-1][1])))
-				{
-					*returnSize += 1;
-					if ((*returnSize) == count)
-					{
-						count <<= 1;
-						ret = realloc(ret, sizeof(int *) * count);
-					}
-					ret[*returnSize-1] = (int*)malloc(sizeof(int)*3);
-					ret[*returnSize-1][0] = nums[i];
-					ret[*returnSize-1][1] = nums[left];
-					ret[*returnSize-1][2] = nums[right];
-					left++;
-				}
-			} else if (nums[left] + nums[right] < target)
-			{
-				left++;
-			} else // nums[left] + nums[right] > target
-			{
-				right--;   
-			}
-
-		}
-	}
-	return ret;
+            if (nums[left] + nums[right] == target) {
+                ret_sz++;
+                if (ret_sz == count) {
+                    count <<= 1;
+                    ret = realloc(ret, sizeof(int *) * count);
+                    *returnColumnSizes =
+                        realloc(*returnColumnSizes, sizeof(int) * count);
+                }
+                ret[ret_sz - 1] = malloc(sizeof(int) * 3);
+                ret[ret_sz - 1][0] = nums[i];
+                ret[ret_sz - 1][1] = nums[left];
+                ret[ret_sz - 1][2] = nums[right];
+                (*returnColumnSizes)[ret_sz - 1] = 3;
+                left++;
+            } else if (nums[left] + nums[right] < target) {
+                left++;
+            } else {
+                /* nums[left] + nums[right] > target */
+                right--;
+            }
+        }
+    }
+    *returnSize = ret_sz;
+    return ret;
 }
