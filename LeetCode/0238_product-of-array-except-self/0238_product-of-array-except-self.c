@@ -1,18 +1,15 @@
-int* productExceptSelf(int* nums, int numsSize, int* returnSize)
+int *productExceptSelf(int *nums, int nums_sz, int *ret_sz)
 {
-	int *ret = calloc(numsSize, sizeof(int));
-	*returnSize = numsSize;
+    int *ret = calloc(nums_sz, sizeof(int));
+    *ret_sz = nums_sz;
 
-	for (int i = 0; i < numsSize; i++)
-	{
-		ret[i] = (i == 0 ? 1 : ret[i-1]*nums[i-1]);
-	}
+    for (int i = 0; i < nums_sz; i++)
+        ret[i] = (i == 0 ? 1 : ret[i - 1] * nums[i - 1]);
 
-	int lastTmp = 0;
-	for (int i = numsSize-1; i >= 0; i--)
-	{
-		lastTmp = (i == numsSize-1 ?  1 : lastTmp*nums[i+1]);
-		ret[i] = ret[i]*lastTmp;
-	}
-	return ret;
+    int last = 0;
+    for (int i = nums_sz - 1; i >= 0; i--) {
+        last = (i == nums_sz - 1 ? 1 : last * nums[i + 1]);
+        ret[i] = ret[i] * last;
+    }
+    return ret;
 }
