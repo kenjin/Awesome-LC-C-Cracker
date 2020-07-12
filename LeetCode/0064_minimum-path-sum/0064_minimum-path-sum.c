@@ -1,48 +1,34 @@
 
-int minPathSum(int** grid, int gridSize, int* gridColSize)
+#define MIN(a, b) (a < b ? a : b)
+
+int minPathSum(int **grid, int grid_sz, int *grid_col_sz)
 {
-	int m = gridSize;
-	int n = gridColSize[0];
-	int **dp = malloc(sizeof(int *)*m);
-	for (int i = 0; i < m; i++)
-	{
-		dp[i] = calloc(n, sizeof(int));
-	}
+    /* sanity check */
+    if (grid_sz == 0)
+        return 0;
 
-	dp[0][0] = grid[0][0];  
-	for (int sum_x_y = 1;
-			sum_x_y <= (m + n - 2); /* Max Sum of row index and col index*/
-			sum_x_y++)
-	{
-		for (int x= 0; x < m; x++)
-		{                        
-			int row = x;
-			int col = sum_x_y - x;
-			if (col < 0 || col >= n)
-			{
-				continue;
-			}
+    int **dp = malloc(sizeof(int *) * grid_sz);
+    int col_sz = grid_col_sz[0], sum = 0;
+    for (int i = 0; i < grid_sz; i++) {
+        dp[i] = malloc(sizeof(int) * col_sz);
+        sum += grid[i][0];
+        dp[i][0] = sum;
+    }
+    sum = 0;
+    for (int i = 0; i < col_sz; i++) {
+        sum += grid[0][i];
+        dp[0][i] = sum;
+    }
 
-			int tmpMin = INT_MAX;
-			if (col-1 >= 0)
-			{
-				tmpMin = dp[row][col-1];
-			}
-			if (row-1 >= 0)
-			{
-				tmpMin = dp[row-1][col] < tmpMin ? dp[row-1][col] : tmpMin;
-			}
+    for (int i = 1; i < grid_sz; i++) {
+        for (int j = 1; j < col_sz; j++)
+            dp[i][j] = MIN(dp[i - 1][j], dp[i][j - 1]) + grid[i][j];
+    }
 
-			dp[row][col] = tmpMin + grid[row][col];
-		}
-	}
+    int ret = dp[grid_sz - 1][col_sz - 1];
+    for (int i = 0; i < grid_sz; i++)
+        free(dp[i]);
+    free(dp);
 
-	int ret = dp[m-1][n-1];
-	for (int i = 0; i < m; i++)
-	{
-		free(dp[i]);
-	}
-	free(dp);
-	return ret;
+    return ret;
 }
-
