@@ -1,53 +1,57 @@
-static inline void swap(int *a, int *b)
+
+static inline void swap(int *x, int *y)
 {
-    int tmp = *a;
-    *a = *b;
-    *b = tmp;
+    *x = *x ^ *y;
+    *y = *x ^ *y;
+    *x = *x ^ *y;
 }
 
-static void heapify(int *arr, int size, int idx)
+static void heapify(int *arr, int size, int cur)
 {
-    int left = (idx << 1) + 1;
-    int right = (idx << 1) + 2;
-    int max_idx = idx;
+    int left = (cur << 1) + 1, right = (cur << 1) + 2;
+    int max = cur;
 
-    if (right < size && arr[right] > arr[max_idx])
-        max_idx = right;
+    if (left < size && arr[left] > arr[max])
+        max = left;
+    if (right < size && arr[right] > arr[max])
+        max = right;
 
-    if (left < size && arr[left] > arr[max_idx])
-        max_idx = left;
-
-    if (max_idx != idx) {
-        swap(&(arr[max_idx]), &(arr[idx]));
-        heapify(arr, size, max_idx);
+    if (max != cur) {
+        swap(&arr[max], &arr[cur]);
+        heapify(arr, size, max);
     }
 }
 
-static inline void create_heap(int *arr, int size)
+static void create_heap(int *arr, int size)
 {
     for (int i = ((size - 1) >> 1); i >= 0; i--)
         heapify(arr, size, i);
 }
 
-int lastStoneWeight(int *stones, int stonesSize)
+int lastStoneWeight(int *stones, int stones_sz)
 {
-    create_heap(stones, stonesSize);
-    while (stonesSize >= 4) {
-        int max2 = (stonesSize > 2 && stones[2] > stones[1]) ? 2 : 1;
-        int diff = abs(stones[0] - stones[max2]);
+    create_heap(stones, stones_sz);
+    for (int i = 0; i < stones_sz; i++)
+        printf("%d ", stones[i]);
+    printf("\n");
 
-        stones[0] = stones[stonesSize - 1];
-        stones[max2] = (diff == 0 ? stones[stonesSize - 2] : diff);
-        stonesSize = (diff == 0 ? stonesSize - 2 : stonesSize - 1);
-
-        heapify(stones, stonesSize, max2);
-        heapify(stones, stonesSize, 0);
+    while (stones_sz >= 4) {
+        /* get the idx of second largest element, that is, return 1 or 2 */
+        int max2_idx = (stones_sz > 2 && stones[2] > stones[1]) ? 2 : 1;
+        int diff = abs(stones[0] - stones[max2_idx]);
+        /* handle two smash conditions */
+        stones[0] = stones[stones_sz - 1];
+        stones[max2_idx] = (diff == 0 ? stones[stones_sz - 2] : diff);
+        stones_sz = (diff == 0 ? stones_sz - 2 : stones_sz - 1);
+        /* adjust max heap */
+        heapify(stones, stones_sz, max2_idx);
+        heapify(stones, stones_sz, 0);
     }
 
-    if (stonesSize == 3)
+    if (stones_sz == 3)
         return abs(stones[0] - stones[1] - stones[2]);
-    else if (stonesSize == 2)
+    else if (stones_sz == 2)
         return abs(stones[0] - stones[1]);
     else
-        return (stonesSize == 1 ? stones[0] : 0);
+        return (stones_sz == 1 ? stones[0] : 0);
 }
