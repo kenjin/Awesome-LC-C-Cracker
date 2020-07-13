@@ -1,92 +1,73 @@
-typedef struct hashT HASH;
 
-struct hashInfo
-{
-	int ctr;
-	int val;   
-};
+typedef struct __hash_data {
+    int ctr;
+    int val;
+} DATA;
 
-struct hashT
-{
-	int size;
-	int mod;
-	struct hashInfo **arr;
-};
+typedef struct __hash_table {
+    int size;
+    DATA *ptr;
+} HASH;
 
-int hash(HASH *obj, int key) 
+static inline int hash(HASH *obj, int key)
 {
-	int r = key % obj->mod;
-	return r < 0 ? r + obj->size : r;
+    int r = key % obj->size;
+    return r < 0 ? r + obj->size : r;
 }
 
-HASH* createHash(int size)
+static HASH *create_hash(int size)
 {
-	HASH *obj = malloc(sizeof(HASH));
-	obj->size = size;
-	obj->mod = size;
-	obj->arr = malloc(sizeof(struct hashInfo)*(size));
-	for (int x = 0; x < size; x++)
-	{
-		obj->arr[x] = calloc(1, sizeof(struct hashInfo));
-	}
-	return obj;
+    HASH *obj = malloc(sizeof(HASH));
+    obj->size = size;
+    obj->ptr = calloc(size, sizeof(DATA));
+    return obj;
 }
 
-void addHash(HASH *ht, int key) 
+static inline void release_hash(HASH *ht)
 {
-	int index = hash(ht, key);
-	while (ht->arr[index]->ctr != 0) 
-	{
-		if (ht->arr[index]->val == key)
-		{            
-			ht->arr[index]->ctr += 1;
-			return;
-		}
-		index++;
-		index %= ht->size;
-	}
-	ht->arr[index]->ctr = 1;
-	ht->arr[index]->val = key;
+    free(ht->ptr);
+    free(ht);
 }
 
-int findHash(HASH *ht, int target) 
+static void add_hash(HASH *ht, int key)
 {
-	int index = hash(ht, target);
-	while (ht->arr[index]->ctr != 0) 
-	{
-		if (ht->arr[index]->val == target) 
-		{
-			return ht->arr[index]->ctr;
-		}
-		index++;
-		index %= ht->size;
-	}
-	return 0;
+    int index = hash(ht, key);
+    while (ht->ptr[index].ctr) {
+        if (ht->ptr[index].val == key) {
+            ht->ptr[index].ctr += 1;
+            return;
+        }
+        index++;
+        index %= ht->size;
+    }
+    ht->ptr[index].ctr = 1;
+    ht->ptr[index].val = key;
 }
 
-void releaseHash(HASH *ht)
+static int find_hash(HASH *ht, int target)
 {
-	for (int i = 0; i < ht->size; i++)
-	{
-		free(ht->arr[i]);
-	}
-	free(ht->arr);
-	free(ht);
+    int index = hash(ht, target);
+    while (ht->ptr[index].ctr) {
+        if (ht->ptr[index].val == target)
+            return ht->ptr[index].ctr;
+        index++;
+        index %= ht->size;
+    }
+    return 0;
 }
 
-int subarraySum(int* nums, int numsSize, int k)
+int subarraySum(int *nums, int nums_sz, int k)
 {
-	int ret = 0;    	
-	HASH *h = createHash(numsSize*3);
-	addHash(h, 0);    
-	int preSum = 0;
-	for (int x = 0; x < numsSize; x++)
-	{
-		preSum += nums[x];
-		ret += findHash(h, preSum - k);
-		addHash(h, preSum);
-	}
-
-	releaseHash(h);
-	return ret;
+    HASH *h = create_hash(nums_sz * 2);
+    int prefix_sum = 0, ret = 0;
+    /* Consider the condition that prefix sum is match to k, add 0 to hash
+     * table. That is, "prefix_sum + 0 = k" */
+    add_hash(h, 0);
+    for (int i = 0; i < nums_sz; i++) {
+        prefix_sum += nums[i];
+        ret += find_hash(h, prefix_sum - k);
+        add_hash(h, prefix_sum);
+    }
+    release_hash(h);
+    return ret;
 }
