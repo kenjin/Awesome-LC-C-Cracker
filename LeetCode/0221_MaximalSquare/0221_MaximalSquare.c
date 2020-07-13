@@ -1,72 +1,40 @@
-/**
 
-221. Maximal Square [Medium]
+#define MAX(a, b) (a > b ? a : b)
+#define MIN3(a, b, c) (a < b ? (a < c ? a : c) : (b < c ? b : c))
 
-Given a 2D binary matrix filled with 0's and 1's, find the largest square containing only 1's and return its area.
-
-Example:
-
-Input:
-1 0 1 0 0
-1 0 1 1 1
-1 1 1 1 1
-1 0 0 1 0
-
-Output: 4
-
- */
-
-
-
-bool checkLargerSquare(char **matrix, int row, int col, int edge)
+int maximalSquare(char **matrix, int matrix_rsz, int *matrix_csz)
 {
-    for (int i = row; i < (row+edge); i++)
-    {
-        for (int j = col; j < (col+edge); j++)
-        {
-            if (matrix[i][j] != '1')
-            {
-                return false;
-            }            
-        }        
-    }
-    return true;    
-}
-
-int maximalSquare(char** matrix, int matrixSize, int* matrixColSize){
-
-    int maxEdge = 0;
-    int colSize = matrixColSize[0];
-    
-    if (matrix == NULL)
-    {
+    if (!matrix_rsz)
         return 0;
-    }
-
-    for (int i = 0; i < matrixSize; i++)
-    {
-        for (int j = 0; j < colSize; j++)
-        {
-            if (matrix[i][j] == '1')
-            {
-                int calEdge = 0;
-                for (int x = (maxEdge+1); ((i+x) <= matrixSize && (j+x) <= colSize); x++)
-                {
-                    if (checkLargerSquare(matrix, i, j, x))
-                    {
-                        calEdge = x;
-                    } else
-                    {
-                        calEdge = x-1;                        
-                        break;
-                    }
-                }
-                if (calEdge > maxEdge)
-                {
-                    maxEdge = calEdge;
-                }
-            }
+    int **dp = malloc(sizeof(int *) * matrix_rsz);
+    int ret = 0, col_sz = matrix_csz[0];
+    for (int i = 0; i < matrix_rsz; i++) {
+        dp[i] = calloc(col_sz, sizeof(int));
+        if (matrix[i][0] == '1') {
+            dp[i][0] = 1;
+            ret = 1;
         }
     }
-    return maxEdge*maxEdge;
+
+    for (int i = 1; i < col_sz; i++) {
+        if (matrix[0][i] == '1') {
+            dp[0][i] = 1;
+            ret = 1;
+        }
+    }
+
+    for (int i = 1; i < matrix_rsz; i++) {
+        for (int j = 1; j < col_sz; j++) {
+            if (matrix[i][j] == '1')
+                dp[i][j] =
+                    MIN3(dp[i - 1][j - 1], dp[i][j - 1], dp[i - 1][j]) + 1;
+            ret = MAX(dp[i][j], ret);
+        }
+    }
+
+    for (int i = 0; i < matrix_rsz; i++)
+        free(dp[i]);
+    free(dp);
+
+    return ret * ret;
 }
