@@ -1,90 +1,119 @@
+typedef struct {
+    int head;
+    int in_degree;
+    int out_degree;
+    int used;
+} INFO;
 
-struct nodeInfo
+typedef struct {
+    int *arr;
+    int size;
+    int cur;
+    int front;
+    int rear;
+} QUEUE;
+
+static inline QUEUE *create_q(int size)
 {
-	int inDegree;
-	int edgeHeadIdx;
-	int edgeNum;
-	int visited;
-};
+    QUEUE *q = malloc(sizeof(QUEUE));
+    q->arr = malloc(sizeof(int) * size);
+    q->size = size;
+    q->cur = 0;
+    q->front = 0;
+    q->rear = -1;
+    return q;
+}
 
-int compare(const void *a, const void *b)
+static inline void release_q(QUEUE *q)
 {
-	const int *n1 = *(int **)a;
-	const int *n2 = *(int **)b;
+    free(q->arr);
+    free(q);
+}
 
-	return n1[1] - n2[1];
+static inline bool empty_q(QUEUE *q)
+{
+    return (q->cur == 0);
+}
+
+static inline void add_q(QUEUE *q, int idx)
+{
+    q->rear = (q->rear + 1) % q->size;
+    q->arr[q->rear] = idx;
+    q->cur++;
+}
+
+static inline int del_q(QUEUE *q)
+{
+    int ret = q->arr[q->front];
+    q->front = (q->front + 1) % q->size;
+    q->cur--;
+    return ret;
+}
+
+static int compare(const void *a, const void *b)
+{
+    int *n1 = *(int **) a;
+    int *n2 = *(int **) b;
+    return n1[1] - n2[1];
 }
 
 /**
  * Note: The returned array must be malloced, assume caller calls free().
  */
-int* findOrder(int numCourses, int** prerequisites, int prerequisitesSize, int* prerequisitesColSize, int* returnSize)
+int *findOrder(int num_courses,
+               int **prerequisites,
+               int prerequisites_sz,
+               int *prerequisites_colsz,
+               int *ret_sz)
 {
-	// sort the vertex order for edge calculation
-	qsort(prerequisites, prerequisitesSize, sizeof(int *), compare);
+    qsort(prerequisites, prerequisites_sz, sizeof(int *), compare);
 
-	struct nodeInfo *data = calloc(numCourses, sizeof(struct nodeInfo));
-	for (int i = 0; i < numCourses; i++)
-	{
-		// init to zero edge
-		data[i].edgeHeadIdx = -1;
-	}    
-	for (int i = 0; i < prerequisitesSize; i++)
-	{
-		// Update in-degree
-		data[ prerequisites[i][0] ].inDegree += 1;
-		// Update edge path
-		data[ prerequisites[i][1] ].edgeNum     = (data[ prerequisites[i][1] ].edgeHeadIdx == -1 ? 
-				1 : data[ prerequisites[i][1] ].edgeNum + 1);
-		data[ prerequisites[i][1] ].edgeHeadIdx = (data[ prerequisites[i][1] ].edgeHeadIdx == -1 ? 
-				i : data[ prerequisites[i][1] ].edgeHeadIdx);
-	}
+    INFO *info = calloc(num_courses, sizeof(INFO));
+    for (int x = 0; x < prerequisites_sz; x++) {
+        int src = prerequisites[x][1];
+        int dst = prerequisites[x][0];
+        if (!info[src].used) {
+            info[src].used = 1;
+            info[src].head = x;
+        }
+        info[src].out_degree += 1;
+        info[dst].in_degree += 1;
+    }
 
-	// Init result
-	int *ret = malloc(sizeof(int)*numCourses);
-	*returnSize = 0;
-	// Topology Ordering
-	char foundNode = 0;
-	char *tmpChk = calloc(numCourses, sizeof(char));
-	int ctr = 0;
-	for (int i = 0; i <= numCourses; i++)
-	{
-		if (i == numCourses)
-		{
-			if (foundNode)
-			{
-				foundNode = 0;
-				memset(tmpChk, 0, sizeof(char)*numCourses);
-				i = -1;
-				continue;
-			} else
-			{
-				break;
-			}
-		}
-		// Get the vertex with 0 in-degree and remove the related edge
-		if (!data[i].visited && data[i].inDegree == 0 && !tmpChk[i])
-		{
-			foundNode = 1;
-			data[i].visited = 1; 
-			if (data[i].edgeHeadIdx != -1) // ignore zero edge case
-			{
-				int size = data[i].edgeHeadIdx + data[i].edgeNum;
-				for (int x = data[i].edgeHeadIdx; x < size; x++)
-				{                    
-					data[ prerequisites[x][0] ].inDegree -= 1;
-					tmpChk[ prerequisites[x][0] ] = 1;
-				}      
-			}
-			ret[ctr] = i;
-			ctr ++;
-		}
-	}
+    QUEUE *q = create_q(num_courses);
+    for (int x = 0; x < num_courses; x++) {
+        if (info[x].in_degree == 0) {
+            add_q(q, x);
+        }
+    }
 
-	*returnSize = (ctr == numCourses ? ctr : 0);
+    int *ret = malloc(sizeof(int) * num_courses);
+    int ret_ctr = 0;
+    /* Topology Sort */
+    char *chk = calloc(num_courses, sizeof(char));
+    while (!empty_q(q)) {
+        int cur = del_q(q);
+        ret[ret_ctr++] = cur;
+        chk[cur] = 1;
+        int head = info[cur].head;
+        int edges = info[cur].head + info[cur].out_degree - 1;
+        for (int i = head; i <= edges; i++) {
+            int tmp = prerequisites[i][0];
+            info[tmp].in_degree -= 1;
+            if (0 == info[tmp].in_degree)
+                add_q(q, tmp);
+        }
+    }
 
-	free(tmpChk);
-	free(data);
-	return ret;
+    for (int i = 0; i < num_courses; i++) {
+        if (!chk[i]) {
+            if (0 == info[i].in_degree)
+                ret[ret_ctr++] = i;
+        }
+    }
+
+    free(chk);
+    release_q(q);
+    *ret_sz = (ret_ctr == num_courses ? ret_ctr : 0);
+    return ret;
 }
-
