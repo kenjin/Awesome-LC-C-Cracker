@@ -1,108 +1,83 @@
-/**
+typedef struct {
+    int head;
+    int tail;
+} POS;
+typedef struct {
+    int size;
+    int cur;
+    POS *p;
+} STACK;
 
-151. Reverse Words in a String [M]
-Ref: https://leetcode.com/problems/reverse-words-in-a-string/
-
-Given an input string, reverse the string word by word.
-
-Example 1:
-Input: "the sky is blue"
-Output: "blue is sky the"
-
-Example 2:
-Input: "  hello world!  "
-Output: "world! hello"
-Explanation: Your reversed string should not contain leading or trailing spaces.
-
-Example 3:
-Input: "a good   example"
-Output: "example good a"
-Explanation: You need to reduce multiple spaces between two words to a single space in the reversed string.
-
-
-Note:
-A word is defined as a sequence of non-space characters.
-Input string may contain leading or trailing spaces. However, your reversed string should not contain leading or trailing spaces.
-You need to reduce multiple spaces between two words to a single space in the reversed string.
-
-
-Follow up:
-For C programmers, try to solve it in-place in O(1) extra space.
-
- */
-
-
-void my_memcpy(void *dest, void *src, size_t n)
+static inline STACK *stack_create(int size)
 {
-	char *csrc = (char *)src;
-	char *cdest = (char *)dest;
-
-	for (int i = 0; i < n; i++)
-	{
-		cdest[i] = csrc[i];
-	}
+    STACK *obj = malloc(sizeof(STACK));
+    obj->size = size;
+    obj->cur = -1;
+    obj->p = malloc(sizeof(int) * size);
+    return obj;
 }
 
-void reverseStr(char *s, int head, int tail)
+static inline bool stack_is_empty(STACK *obj)
 {
-	while (head < tail)
-	{
-		char tmp = s[head];
-		s[head] = s[tail];
-		s[tail] = tmp;
-		head++;
-		tail--;
-	}
+    return (obj->cur == -1 ? true : false);
+}
+
+static inline void stack_push(STACK *obj, int head, int tail)
+{
+    obj->cur += 1;
+    obj->p[obj->cur].head = head;
+	obj->p[obj->cur].tail = tail;
+}
+
+static POS stack_pop(STACK *obj)
+{
+    obj->cur -= 1;
+    return obj->p[obj->cur + 1];
+}
+
+static inline void stack_release(STACK *obj)
+{
+    free(obj->p);
+    free(obj);
+}
+
+static inline int insert_word(STACK *stk, char *dst, char *src)
+{
+    POS cur = stack_pop(stk);
+    int clen = cur.tail - cur.head + 1;
+    memcpy(dst, &src[cur.head], sizeof(char)*clen);
+    return clen;
 }
 
 char * reverseWords(char * s)
 {
 	int len = strlen(s);
-	/* Reverse entire string */
-	reverseStr(s, 0, len-1);
-
-	/* Reverse each sub-string */
+	char *tmp = calloc(len+1, sizeof(char));
+	strcpy(tmp, s);
+	STACK *stk = stack_create(len+1);
+	bool in_str = false;
+	int head = 0, tail = 0;
+	for (int i = 0; i <= len; i++) {
+		if (!in_str && tmp[i] != ' ') {
+			in_str = true;
+			head = i;
+		} else if ((in_str && tmp[i] == ' ') || i == len) {
+			tail = i - 1;
+			stack_push(stk, head, tail);
+			in_str = false;
+		}
+	}
 	int idx = 0;
-	int findStr = -1; /* -1 means currently we dont find any char of sub-string*/
-	int curLen = 0;
-	while (s[idx] != '\0')
-	{
-		/* find the first char of sub-string, record the index */
-		if (s[idx] != ' ' && (findStr == -1))
-		{
-			findStr = idx;
-		}
-		/* find the space after sub-string */
-		if (s[idx] == ' ' && (findStr != -1))
-		{
-			s[idx] = '\0';
-			int tmpLen = strlen(&(s[findStr]));
-			s[idx] = ' ';
-			reverseStr(s, findStr, idx-1);
-			/* Use my_memcpy to avoid memcpy(): "memcpy-param-overlap" */
-			my_memcpy(&(s[curLen]), &(s[findStr]), sizeof(char)*(tmpLen+1));
-			curLen += (tmpLen+1);
-			/* reverse the sub-string and reset findIdx of sub-string */
-			findStr = -1;
-		}
-		idx++;
-	}
-	/* Means that we found the last string have not completed the reverse */
-	if (findStr != -1)
-	{
-		reverseStr(s, findStr, idx-1);
-		int tmpLen = strlen(&(s[findStr]));
-		my_memcpy(&(s[curLen]), &(s[findStr]), sizeof(char)*(tmpLen+1));
-		curLen += (tmpLen+1);
-	}
+	if (!stack_is_empty(stk))		
+		idx += insert_word(stk, &s[idx], tmp);
 
-	/* Edge case ("", "[space]...[space]") */
-	if (curLen == 0)
-	{
-		return "";
-	} else
-	{
-		s[curLen-1] = '\0';
+	while (!stack_is_empty(stk)) {
+		s[idx++] = ' ';		
+		idx += insert_word(stk, &s[idx], tmp);
 	}
+	s[idx] = 0;
+
+	free(tmp);
+	stack_release(stk);
 	return s;
 }
