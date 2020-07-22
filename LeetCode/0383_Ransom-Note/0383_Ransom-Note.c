@@ -1,35 +1,23 @@
 
-bool canConstruct(char * ransomNote, char * magazine)
+
+bool canConstruct(char *ransomNote, char *magazine)
 {
-	int *ranSet = calloc(26, sizeof(int));
-	int *magSet = calloc(26, sizeof(int));
+    int *set = calloc(26, sizeof(int));
+    while (*magazine) {
+        set[*magazine - 'a'] += 1;
+        magazine++;
+    }
 
-	bool ret = true;
-	int idx = 0;
-	while (ransomNote[idx] != '\0')
-	{
-		ranSet[(ransomNote[idx] - 'a')] += 1;
-		idx++;
-	}
-	idx = 0;
-	while (magazine[idx] != '\0')
-	{
-		magSet[(magazine[idx] - 'a')] += 1;
-		idx++;
-	}
+    bool ret = true;
+    while (*ransomNote) {
+        if (set[*ransomNote - 'a'] == 0) {
+            ret = false;
+            break;
+        }
+        set[*ransomNote - 'a'] -= 1;
+        ransomNote++;
+    }
 
-	for (int i = 0; i < 26; i++)
-	{
-		if (magSet[i] < ranSet[i])
-		{
-			ret = false;
-			break;
-		}
-	}
-
-	free(ranSet);
-	free(magSet);
-
-	return ret;
+    free(set);
+    return ret;
 }
-
