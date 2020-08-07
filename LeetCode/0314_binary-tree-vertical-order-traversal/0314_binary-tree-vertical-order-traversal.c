@@ -1,95 +1,71 @@
-typedef struct
-{
-	int val;
-	int x;
-	int y;
-} NODE_INFO;
+#define INFO_SIZE_UNIT 5000
 
-void traverse(struct TreeNode* root, int x, int y, NODE_INFO *n, int *nCtr)
-{
-	if (root == NULL)
-	{
-		return;
-	}
+typedef struct TreeNode NODE;
+typedef struct {
+    int val;
+    int pos;
+    int lv;
+} INFO;
 
-	traverse(root->left, x-1, y-1, n, nCtr);    
-	n[*nCtr].val = root->val;
-	n[*nCtr].x = x;
-	n[*nCtr].y = y;
-	*nCtr += 1;
-	traverse(root->right, x+1, y-1, n, nCtr);
+void traversal(NODE *root, int pos, int level, INFO **data, int *data_ctr)
+{
+    if (!root)
+        return;
+
+    traversal(root->left, pos - 1, level + 1, data, data_ctr);
+    /* Add info */
+    (*data)[*data_ctr].val = root->val;
+    (*data)[*data_ctr].pos = pos;
+    (*data)[*data_ctr].lv = level;
+    *data_ctr += 1;
+    if (0 == *data_ctr % INFO_SIZE_UNIT)
+        *data = realloc(*data, sizeof(INFO) * (*data_ctr + INFO_SIZE_UNIT));
+
+    traversal(root->right, pos + 1, level + 1, data, data_ctr);
 }
 
-int countNodes(struct TreeNode* root)
+int compare(void *a, void *b)
 {
-	if (root == NULL)
-	{
-		return 0;
-	}
-
-	return countNodes(root->left)+countNodes(root->right)+1;
+    INFO *n1 = (INFO *) a;
+    INFO *n2 = (INFO *) b;
+    if (n1->pos == n2->pos)
+        return (n1->lv == n2->lv ? n1->val - n2->val : n1->lv - n2->lv);
+    return n1->pos - n2->pos;
 }
 
-int compare(const void *a, const void *b)
+int **verticalTraversal(NODE *root, int *returnSize, int **returnColumnSizes)
 {
-	NODE_INFO n1 = *(NODE_INFO *)a;
-	NODE_INFO n2 = *(NODE_INFO *)b;
+    INFO *data = malloc(sizeof(INFO) * INFO_SIZE_UNIT);
+    int data_ctr = 0;
+    traversal(root, 0, 0, &data, &data_ctr);
 
-	if (n1.x == n2.x)
-	{
-		return n2.y - n1.y;
-	} else
-	{
-		return n1.x - n2.x;
-	}
+    qsort(data, data_ctr, sizeof(INFO), compare);
+
+    int **ret = malloc(sizeof(int *));
+    *returnColumnSizes = malloc(sizeof(int));
+
+    ret[0] = malloc(sizeof(int));
+    (*returnColumnSizes)[0] = 1;
+    ret[0][0] = data[0].val;
+    int ret_ctr = 1;
+    for (int i = 1; i < data_ctr; i++) {
+        if (data[i].pos == data[i - 1].pos) {
+            int tmp = ret_ctr - 1;
+            ret[tmp] = realloc(ret[tmp],
+                               sizeof(int) * ((*returnColumnSizes)[tmp] + 1));
+            ret[tmp][(*returnColumnSizes)[tmp]] = data[i].val;
+            (*returnColumnSizes)[tmp] += 1;
+        } else {
+            ret = realloc(ret, sizeof(int *) * (ret_ctr + 1));
+            *returnColumnSizes =
+                realloc(*returnColumnSizes, sizeof(int) * (ret_ctr + 1));
+            ret[ret_ctr] = malloc(sizeof(int));
+            (*returnColumnSizes)[ret_ctr] = 1;
+            ret[ret_ctr][0] = data[i].val;
+            ret_ctr++;
+        }
+    }
+
+    *returnSize = ret_ctr;
+    return ret;
 }
-
-/**
- * Return an array of arrays of size *returnSize.
- * The sizes of the arrays are returned as *returnColumnSizes array.
- * Note: Both returned array and *columnSizes array must be malloced, assume caller calls free().
- */
-int** verticalOrder(struct TreeNode* root, int* returnSize, int** returnColumnSizes)
-{
-	if (root == NULL)
-	{
-		*returnSize = 0;
-		return NULL;
-	}
-
-	int nodes = countNodes(root);
-	NODE_INFO *n = malloc(sizeof(NODE_INFO)*nodes);
-	int nCtr = 0;
-	traverse(root, 0, 0, n, &nCtr);
-
-	qsort(n, nCtr, sizeof(NODE_INFO), compare);
-
-	int **ret = malloc(sizeof(int *)*nodes);
-	for (int i = 0; i < nodes; i++)
-	{
-		// overtake
-		ret[i] = malloc(sizeof(int)*nodes);
-	}
-	*returnColumnSizes = calloc(nodes, sizeof(int));    
-	ret[0][0] = n[0].val;
-	*returnSize = 1;
-	(*returnColumnSizes)[0] = 1;
-	for (int i = 1; i < nodes; i++)
-	{
-		if (n[i].x == n[i-1].x)
-		{
-			ret[*returnSize - 1][(*returnColumnSizes)[*returnSize - 1]] = n[i].val;
-			(*returnColumnSizes)[*returnSize - 1] += 1;            
-		} else
-		{
-			*returnSize += 1;
-			ret[*returnSize - 1][0] = n[i].val;
-			(*returnColumnSizes)[*returnSize - 1] = 1;
-		}
-	}
-
-	free(n);
-	return ret;
-}
-
-
