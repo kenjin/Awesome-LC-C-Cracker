@@ -7,58 +7,51 @@
  * };
  */
 
-typedef struct listNode
-{    
-	struct listNode* head;
-	struct TreeNode* node;
-	struct listNode* next;
+typedef struct TreeNode NODE;
+typedef struct __list_node {
+    int val;
+    struct __list_node *head;
+    struct __list_node *next;
 } LIST;
 
-void pathSumHelper(struct TreeNode* root, LIST *l, int sum, int target, int *ret)
+void path_sum_traverse(NODE *root,
+                       LIST *l,
+                       int path_sum,
+                       int target_sum,
+                       int *ret)
 {
-	if (NULL == root)
-	{
-		return 0;
-	}
+    if (!root)
+        return;
 
-	// create new list node
-	LIST *newList = calloc(1, sizeof(LIST));
-	newList->head = l->head;
-	l->node = root;
-	l->next = newList;    
-	sum += root->val;
+    LIST *newl = malloc(sizeof(LIST));
+    newl->head = l->head;
+    newl->next = NULL;
+    newl->val = root->val;
+    l->next = newl;
 
-	// check all posible sum
-	struct listNode* rList = l->head;
-	int tmpSum = sum;
-	while (NULL != rList->next)
-	{
-		if (tmpSum == target)
-		{
-			*ret += 1;
-		}
-		tmpSum -= rList->node->val; 
-		rList = rList->next;        
-	}
+    int tmp_sum = path_sum + root->val;
+    LIST *l_head =
+        l->head->next; /* head is an empty node, start from the next */
+    while (l_head) {
+        if (tmp_sum == target_sum)
+            *ret += 1;
+        tmp_sum -= l_head->val;
+        l_head = l_head->next;
+    }
 
-	pathSumHelper(root->left , l->next, sum, target, ret);
-	pathSumHelper(root->right, l->next, sum, target, ret);
-
-	// free new list node
-	free(newList);
+    path_sum_traverse(root->left, newl, path_sum + root->val, target_sum, ret);
+    path_sum_traverse(root->right, newl, path_sum + root->val, target_sum, ret);
+    free(newl);
 }
 
-int pathSum(struct TreeNode* root, int sum)
+int pathSum(struct TreeNode *root, int sum)
 {
-	int ret = 0;
-	int curSum = 0;
-	LIST *l = calloc(1, sizeof(LIST));
-	l->head = l;
+    /* Create an empty head list node */
+    LIST *l = calloc(1, sizeof(LIST));
+    l->head = l;
+    int ret = 0;
 
-	pathSumHelper(root, l, 0, sum, &ret);
-
-	free(l);
-	return ret;
+    path_sum_traverse(root, l, 0, sum, &ret);
+    free(l);
+    return ret;
 }
-
-
