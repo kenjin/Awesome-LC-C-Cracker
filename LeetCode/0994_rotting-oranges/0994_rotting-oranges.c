@@ -1,114 +1,123 @@
-typedef struct
-{
-	int x;
-	int y;
-} DATA;
+enum {
+    EMPTY = 0,
+    FRESH,
+    ROTTEN,
+};
 
-typedef struct queueInfo
-{
-	int size;
-	int cur;
-	int front;
-	int rear;
-	DATA *data;
+typedef struct __pos {
+    int row;
+    int col;
+} POS;
+
+typedef struct __queue {
+    int size;
+    int cur;
+    int head;
+    int tail;
+    POS *arr;
 } QUEUE;
 
-QUEUE* createQueue(int size)
+static inline QUEUE *create_q(int size)
 {
-	QUEUE *obj = malloc(sizeof(QUEUE));
-	obj->size = size;
-	obj->cur = 0;
-	obj->front = 0;
-	obj->rear = -1;
-	obj->data = malloc(sizeof(DATA)*size);
-	return obj;
+    QUEUE *q = malloc(sizeof(QUEUE));
+    q->head = 0;
+    q->tail = -1;
+    q->size = size;
+    q->cur = 0;
+    q->arr = malloc(sizeof(POS) * size);
+    return q;
 }
 
-void destroyQueue(QUEUE *obj)
+static inline void release_q(QUEUE *q)
 {
-	free(obj->data);
-	free(obj);
+    free(q->arr);
+    free(q);
 }
 
-bool isEmpty(QUEUE *obj)
+static inline int get_size_q(QUEUE *q)
 {
-	return (obj->cur == 0 ? true : false) ;
+    return q->cur;
 }
 
-bool isFull(QUEUE *obj)
+static inline bool is_full_q(QUEUE *q)
 {
-	return (obj->cur == obj->size ? true : false) ;
+    return (q->cur == q->size);
 }
 
-void addQueue(QUEUE *obj, int row, int col)
+static inline bool is_empty_q(QUEUE *q)
 {
-	if (isFull(obj))
-	{
-		return;
-	}
-	obj->rear = (obj->rear+1) % obj->size;
-	obj->data[obj->rear].x = row;
-	obj->data[obj->rear].y = col;
-	obj->cur++;
+    return (q->cur == 0);
 }
 
-int getSizeQueue(QUEUE *obj)
+static inline void push_q(QUEUE *q, int x, int y)
 {
-	return obj->cur;
+    if (is_full_q(q))
+        return;
+
+    q->tail = (q->tail + 1) % q->size;
+    q->arr[q->tail].row = x;
+    q->arr[q->tail].col = y;
+    q->cur += 1;
 }
 
-DATA delQueue(QUEUE *obj)
+static inline void pop_q(QUEUE *q)
 {
-	DATA ret = obj->data[obj->front];
-	obj->front = (obj->front+1) % obj->size;
-	obj->cur--;
-	return ret;
+    if (is_empty_q(q))
+        return;
+
+    q->head = (q->head + 1) % q->size;
+    q->cur -= 1;
 }
 
-int orangesRotting(int** grid, int gridSize, int* gridColSize)
+static inline POS peak_q(QUEUE *q)
 {
-
-	QUEUE *q = createQueue(gridSize*gridColSize[0]);
-	int freshCtr = 0;
-	for (int i = 0; i < gridSize; i++)
-	{
-		for (int j = 0; j < gridColSize[0]; j++)
-		{
-			if (grid[i][j] == 2)
-			{
-				addQueue(q, i, j);
-			} else if (grid[i][j] == 1)
-			{
-				freshCtr++;   
-			}
-		}
-	}
-	int min = 0;
-	int dir[4][2] = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}};
-	while (!isEmpty(q) && freshCtr > 0)
-	{
-		min++;
-		int qSize = getSizeQueue(q);
-		for (int x = 0; x < qSize; x++)
-		{
-			DATA cur = delQueue(q);
-			for (int i = 0; i < 4; i++)
-			{
-				int checkRow = cur.x + dir[i][0];
-				int checkCol = cur.y + dir[i][1];
-				if (checkRow >= 0 && checkCol >= 0 && 
-						checkRow < gridSize && checkCol < gridColSize[0] &&
-						grid[checkRow][checkCol] == 1)
-				{
-					addQueue(q, checkRow, checkCol);
-					grid[checkRow][checkCol] = 2;
-					freshCtr--;
-				}
-			}
-		}
-	}
-
-	destroyQueue(q);
-	return (freshCtr > 0 ? -1 : min);
+    return q->arr[q->head];
 }
 
+static void bfs(int **grid, int row_sz, int col_sz, QUEUE *q, int *fresh_cnt)
+{
+    int dir[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    int cur_sz = get_size_q(q);
+    for (int i = 0; i < cur_sz; i++) {
+        POS tmp = peak_q(q);
+        pop_q(q);
+        for (int x = 0; x < 4; x++) {
+            int cur_row = tmp.row + dir[x][0];
+            int cur_col = tmp.col + dir[x][1];
+            if (cur_row >= 0 && cur_row < row_sz && cur_col >= 0 &&
+                cur_col < col_sz && grid[cur_row][cur_col] == FRESH) {
+                *fresh_cnt -= 1;
+                push_q(q, cur_row, cur_col);
+                grid[cur_row][cur_col] = ROTTEN;
+            }
+        }
+    }
+}
+
+int orangesRotting(int **grid, int gridSize, int *gridColSize)
+{
+    int col_sz = gridColSize[0];
+    QUEUE *q = create_q(gridSize * col_sz);
+
+    /* init */
+    int fresh_cnt = 0;
+    for (int i = 0; i < gridSize; i++) {
+        for (int j = 0; j < col_sz; j++) {
+            if (grid[i][j] == ROTTEN)
+                push_q(q, i, j);
+            else if (grid[i][j] == FRESH)
+                fresh_cnt++;
+        }
+    }
+    /* rotten oranges */
+    int min = 0;
+    while (1) {
+        bfs(grid, gridSize, col_sz, q, &fresh_cnt);
+        if (is_empty_q(q))
+            break;
+        min++;
+    }
+
+    release_q(q);
+    return (fresh_cnt == 0 ? min : -1);
+}
