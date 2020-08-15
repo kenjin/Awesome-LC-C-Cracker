@@ -2,7 +2,8 @@
 171. Excel Sheet Column Number [E]
 Ref: https://leetcode.com/problems/excel-sheet-column-number/
 
-Given a column title as appear in an Excel sheet, return its corresponding column number.
+Given a column title as appear in an Excel sheet, return its corresponding
+column number.
 
 For example:
 A -> 1
@@ -11,7 +12,7 @@ C -> 3
 ...
 Z -> 26
 AA -> 27
-AB -> 28 
+AB -> 28
 ...
 
 Example 1:
@@ -28,15 +29,13 @@ Output: 701
 
  */
 
-int titleToNumber(char * s)
+int titleToNumber(char *s)
 {
-	int len = strlen(s);
-	int sum = 0;
-	for (int x = 0; x < len; x++)
-	{
-		int num = s[x]-'A'+1;
-		sum = sum*26 + num;
-	}
-
-	return sum;
+    int sum = 0;
+    while (*s) {
+        sum *= 26;
+        sum += *s - 'A' + 1;
+        s++;
+    }
+    return sum;
 }
