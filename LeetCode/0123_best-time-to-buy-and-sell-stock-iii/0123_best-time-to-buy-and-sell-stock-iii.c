@@ -1,43 +1,42 @@
-int maxProfit(int* prices, int pricesSize)
+
+int maxProfit(int *prices, int prices_sz)
 {
-	if (pricesSize == 0)
-	{
-		return 0;
-	}
+    /* sanity check */
+    if (!prices_sz)
+        return 0;
 
-	int *tranOnce = calloc(pricesSize, sizeof(int)*pricesSize);
-	int *afterTran = calloc(pricesSize, sizeof(int));
-	int minIdx = 0;    
-	int maxIdx = pricesSize-1;
-	int ret = 0;
+    int profit = 0;
+    /**
+     * tran_head[i]: max profix from day 0 to day i
+     * tran_tail[i]: max profix from day i to last day
+     */
+    int *tran_head = malloc(sizeof(int) * prices_sz);
+    int *tran_tail = malloc(sizeof(int) * prices_sz);
+    tran_head[0] = 0, tran_tail[prices_sz - 1] = 0;
 
-	for (int i = 1; i < pricesSize; i++)
-	{
-		if (prices[i] > prices[minIdx])
-		{
-			tranOnce[i] = (tranOnce[i-1] > (prices[i] - prices[minIdx]) ? tranOnce[i-1] : (prices[i] - prices[minIdx]));
-		}
-		minIdx = (prices[minIdx] < prices[i] ? minIdx : i);
-	}
+    int min_idx = 0;
+    for (int i = 1; i < prices_sz; i++) {
+        int diff = prices[i] - prices[min_idx];
+        tran_head[i] = (tran_head[i - 1] > diff ? tran_head[i - 1] : diff);
+        min_idx = (prices[i] < prices[min_idx] ? i : min_idx);
+    }
 
-
-	for (int i = pricesSize-2; i >= 0; i--)
-	{
-		afterTran[i] = (afterTran[i+1] > (prices[maxIdx] - prices[i]) ? afterTran[i+1] : (prices[maxIdx] - prices[i]));
-		maxIdx = (prices[maxIdx] > prices[i] ? maxIdx : i);
-	}
-
-	// Check the possible max value of twice tranaction
-	for (int x = 1; x < pricesSize; x++)
-	{
-		ret = (ret > tranOnce[x-1] + afterTran[x] ? ret : tranOnce[x-1] + afterTran[x]);
-	}
-
-	// Consider one transaction case (tranOnce[7] == afterTran[0])
-	ret = ret > afterTran[0] ? ret : afterTran[0];
-
-	free(tranOnce);
-	free(afterTran);
-	return ret ;
+    int max_idx = prices_sz - 1;
+    for (int i = prices_sz - 2; i >= 0; i--) {
+        int diff = prices[max_idx] - prices[i];
+        tran_tail[i] = (tran_tail[i + 1] > diff ? tran_tail[i + 1] : diff);
+        max_idx = (prices[i] > prices[max_idx] ? i : max_idx);
+    }
+    /* calculate the possible max value of twice tranaction */
+    for (int i = 1; i < prices_sz - 2; i++) {
+        int cur = tran_head[i] + tran_tail[i + 1];
+        profit = (profit > cur ? profit : cur);
+    }
+    /* consider one transaction case */
+    profit =
+        (profit > tran_head[prices_sz - 1] ? profit : tran_head[prices_sz - 1]);
+    /* release memory */
+    free(tran_head);
+    free(tran_tail);
+    return profit;
 }
-
