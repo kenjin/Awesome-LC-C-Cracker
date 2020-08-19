@@ -10,41 +10,37 @@ typedef struct ListNode NODE;
 
 static void reverse_list(NODE *head, NODE *tail)
 {
-    NODE *prev = NULL;
-    NODE *curr = head;
-    while (curr != tail) {
-        NODE *next = curr->next;
-        curr->next = prev;
-        prev = curr;
-        curr = next;
+    NODE *cur = head, *prev = NULL;
+    while (cur != tail) {
+        NODE *next_one = cur->next;
+        cur->next = prev;
+        prev = cur;
+        cur = next_one;
     }
-    curr->next = prev;
-    NODE *root = curr;
+    cur->next = prev;
 }
 
 struct ListNode *reverseKGroup(struct ListNode *head, int k)
 {
     int ctr = 0;
-    NODE *curr = head, *prev = NULL, *tmp_head = NULL, *tmp_tail = NULL;
-    while (curr) {
-        if (ctr == 0)
-            tmp_head = curr;
-
+    NODE *cur = head, *prev = NULL, *tmp_head = NULL, *tmp_tail = NULL;
+    while (cur) {
+        NODE *next_one = cur->next;
         ctr++;
-        if (ctr == k) {
-            tmp_tail = curr;
-            curr = curr->next;
+        if (ctr == 1) {
+            tmp_head = cur;
+        } else if (ctr == k) {
+            tmp_tail = cur;
             reverse_list(tmp_head, tmp_tail);
-            if (!prev) /* first time to reverse */
+            if (!prev)
                 head = tmp_tail;
             else
                 prev->next = tmp_tail;
 
             prev = tmp_head;
             ctr = 0;
-        } else {
-            curr = curr->next;
         }
+        cur = next_one;
     }
 
     if (ctr && prev)
