@@ -1,65 +1,67 @@
 #define MIN(a, b) (a < b ? a : b)
 
-bool isValid(int curX, int curY, int rowSize, int colSize, int **maze)
+static inline bool is_valid_position(int cur_x,
+                                     int cur_y,
+                                     int row_sz,
+                                     int col_sz,
+                                     int **maze)
 {
-	return (curX >= 0 && curX < rowSize && curY >= 0 && curY < colSize && 0 == maze[curX][curY]);
+    return (cur_x >= 0 && cur_x < row_sz && cur_y >= 0 && cur_y < col_sz &&
+            0 == maze[cur_x][cur_y]);
 }
 
-void
-mazeHelper(int **maze, int rowSize, int colSize, int **cost, int curX, int curY)
+static void maze_dfs(int **maze,
+                     int row_sz,
+                     int col_sz,
+                     int **cost,
+                     int cur_x,
+                     int cur_y)
 {
-	int dir[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-	for (int x = 0; x < 4; x++)
-	{
-		int nextX = curX, nextY = curY;
-		int curStep = 0;
-		while (1)
-		{            
-			nextX += dir[x][0];
-			nextY += dir[x][1];
-			curStep++;
-			if (isValid(nextX, nextY, rowSize, colSize, maze))
-			{
-				continue;
-			} else
-			{
-				nextX -= dir[x][0];
-				nextY -= dir[x][1];
-				curStep--;
-				break;
-			}
-		}
-
-		if (cost[curX][curY] + curStep < cost[nextX][nextY])
-		{
-			cost[nextX][nextY] = cost[curX][curY]+curStep;
-			mazeHelper(maze, rowSize, colSize, cost, nextX, nextY);
-		}
-	}
+    int dir[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    for (int x = 0; x < 4; x++) {
+        int next_x = cur_x, next_y = cur_y, cur_step = 0;
+        while (1) {
+            next_x += dir[x][0];
+            next_y += dir[x][1];
+            cur_step++;
+            if (!is_valid_position(next_x, next_y, row_sz, col_sz, maze)) {
+                next_x -= dir[x][0];
+                next_y -= dir[x][1];
+                cur_step--;
+                break;
+            }
+        }
+        if (cost[cur_x][cur_y] + cur_step < cost[next_x][next_y]) {
+            cost[next_x][next_y] = cost[cur_x][cur_y] + cur_step;
+            maze_dfs(maze, row_sz, col_sz, cost, next_x, next_y);
+        }
+    }
 }
 
-int shortestDistance(int** maze, int mazeSize, int* mazeColSize, int* start, int startSize, int* destination, int destinationSize)
+int shortestDistance(int **maze,
+                     int maze_sz,
+                     int *maze_col_sz,
+                     int *start,
+                     int start_sz,
+                     int *destination,
+                     int destination_sz)
 {
-	int colSize = mazeColSize[0];
-	int **cost = malloc(sizeof(int *)*mazeSize);
-	for (int i = 0; i < mazeSize; i++)
-	{
-		cost[i] = calloc(colSize, sizeof(int));
-		memset(cost[i], 1, sizeof(int)*colSize);
-	}
+    int col_sz = maze_col_sz[0];
+    int **cost = malloc(sizeof(int *) * maze_sz);
+    for (int i = 0; i < maze_sz; i++) {
+        cost[i] = malloc(sizeof(int) * col_sz);
+        for (int j = 0; j < col_sz; j++)
+            cost[i][j] = INT_MAX;
+    }
 
-	int min = INT_MAX;
-	cost[start[0]][start[1]] = 0;
-	cost[destination[0]][destination[1]] = INT_MAX;
-	mazeHelper(maze, mazeSize, colSize, cost, start[0], start[1]);
+    cost[start[0]][start[1]] = 0;
+    maze_dfs(maze, maze_sz, col_sz, cost, start[0], start[1]);
+    int ret = (cost[destination[0]][destination[1]] == INT_MAX
+                   ? -1
+                   : cost[destination[0]][destination[1]]);
 
-	int ret = (cost[destination[0]][destination[1]] == INT_MAX ? -1 : cost[destination[0]][destination[1]]);
-	for (int i = 0; i < mazeSize; i++)
-	{
-		free(cost[i]);
-	}
-	free(cost);
-
-	return ret;
+    for (int i = 0; i < maze_sz; i++)
+        free(cost[i]);
+    free(cost);
+    return ret;
 }
-
