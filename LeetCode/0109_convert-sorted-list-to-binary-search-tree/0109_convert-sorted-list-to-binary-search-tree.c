@@ -14,60 +14,38 @@
  * };
  */
 
-typedef struct TreeNode TREE;
-typedef struct ListNode LIST;
-LIST* middleNode(LIST* head)
+
+typedef struct TreeNode tree_t;
+typedef struct ListNode list_t;
+
+static list_t *cut_list_half(list_t *head)
 {
-	LIST *slow = head;
-	LIST *fast = head;
-
-	while (fast && fast->next)
-	{
-		slow = slow->next;
-		fast = fast->next->next;
-	}
-
-	return slow;
+    list_t *p1 = head, *p2 = head, *prev = NULL;
+    while (p2 && p2->next) {
+        prev = p1;
+        p1 = p1->next;
+        p2 = p2->next->next;
+    }
+    if (prev)
+        prev->next = NULL;
+    return p1;
 }
-
-void updateMid(LIST* head, LIST *ban)
+struct TreeNode *sortedListToBST(list_t *head)
 {
-	LIST *prev = NULL;
-	while (head)
-	{
-		if (head == ban)
-		{
-			prev->next = NULL;
-			break;
-		}
-		prev = head;
-		head = head->next;        
-	}
+    if (!head)
+        return NULL;
+
+    tree_t *cur = calloc(1, sizeof(tree_t));
+    if (!head->next) {
+        /* one node in list */
+        cur->val = head->val;
+    } else {
+        /* separate to left-half and right-half */
+        list_t *mid = cut_list_half(head);
+        cur->val = mid->val;
+        cur->left = sortedListToBST(head);
+        cur->right = sortedListToBST(mid->next);
+    }
+out:
+    return cur;
 }
-
-TREE* sortedListToBST(LIST* head)
-{
-	// Find the middle node
-	LIST *mid = middleNode(head);
-	if (NULL == mid)
-	{
-		return NULL;
-	}
-
-	TREE *root = malloc(sizeof(TREE));
-	root->val = mid->val;
-
-	// Update mid node to NULL
-	if (head == mid)
-	{
-		head = NULL;
-	} else
-	{
-		updateMid(head, mid);
-	}
-
-	root->left = sortedListToBST(head);
-	root->right = sortedListToBST(mid->next);
-	return root;
-}
-
