@@ -1,31 +1,32 @@
-typedef struct ListNode NODE;
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     struct ListNode *next;
+ * };
+ */
 
-struct ListNode* partition(struct ListNode* head, int x)
+typedef struct ListNode list_t;
+struct ListNode *partition(struct ListNode *head, int x)
 {
-	NODE *h1 = calloc(1, sizeof(NODE));
-	NODE *h2 = calloc(1, sizeof(NODE));
+    list_t *lt_head = calloc(1, sizeof(list_t));
+    list_t *ge_head = calloc(1, sizeof(list_t));
+    list_t *cur = head, *lt_cur = lt_head, *ge_cur = ge_head;
+    while (cur) {
+        if (cur->val < x) {
+            lt_cur->next = cur;
+            lt_cur = cur;
+        } else {
+            ge_cur->next = cur;
+            ge_cur = cur;
+        }
+        cur = cur->next;
+    }
 
-	NODE *tmp = head, *p1 = h1, *p2 = h2;
-	while (tmp)
-	{
-		if (tmp->val < x)
-		{
-			p1->next = tmp;
-			p1 = p1->next;
-		} else
-		{
-			p2->next = tmp;
-			p2 = p2->next;
-		}
-		tmp = tmp->next;
-	}
-
-	p1->next = h2->next;
-	p2->next = NULL;    
-	head = h1->next;
-	free(h1);
-	free(h2);    
-	return head;
+    lt_cur->next = ge_head->next;
+    ge_cur->next = NULL;
+    head = lt_head->next;
+    free(lt_head);
+    free(ge_head);
+    return head;
 }
-
-
