@@ -1,99 +1,46 @@
 /**
-234. Palindrome Linked List [Easy]
-
-Given a singly linked list, determine if it is a palindrome.
-
-Example 1:
-	Input: 1->2
-	Output: false
-
-Example 2:
-	Input: 1->2->2->1
-	Output: true
-
-Follow up:
-	Could you do it in O(n) time and O(1) space?
-
- */
-/**
  * Definition for singly-linked list.
  * struct ListNode {
  *     int val;
  *     struct ListNode *next;
  * };
  */
-/*
-void printNode(struct ListNode* node)
+
+typedef struct ListNode node_t;
+static node_t *revert_list(node_t *head)
 {
-    struct ListNode *head = node;
-    while (head)
-    {
-        printf("%d ", head->val);
+    node_t *prev = NULL;
+    while (head) {
+        node_t *nextn = head->next;
+        head->next = prev;
+        prev = head;
+        head = nextn;
+    }
+    return prev;
+}
+
+bool isPalindrome(node_t *head)
+{
+    /* make sure that there are at least two nodes in list */
+    if (!head || !head->next)
+        return true;
+
+    node_t *p1 = head, *p2 = head, *prev = NULL;
+    while (p2 && p2->next) {
+        prev = p1;
+        p1 = p1->next;
+        p2 = p2->next->next;
+    }
+
+    prev->next = NULL;
+    p1 = revert_list(p1);
+    while (p1 && head) {
+        if (head->val != p1->val)
+            return false;
+
+        p1 = p1->next;
         head = head->next;
     }
-    printf("\n");
-}
-*/
-void reverseLinkedList(struct ListNode* head)
-{
-    if (head == NULL)
-    {
-        return;
-    }
 
-    struct ListNode *tmpNode = NULL, *nextNode = NULL;
-    while (head != NULL)
-    {
-        nextNode = head->next;
-        head->next = tmpNode;
-        tmpNode = head;
-        head = nextNode;
-    }
-}
-
-bool isPalindrome(struct ListNode* head)
-{
-    if (head == NULL || head->next == NULL)
-    {
-        return true;
-    }
-
-    struct ListNode *midNode = head, *tailNode = head;
-
-    /* calculate location of mid and tail */
-    while (tailNode->next != NULL && tailNode->next->next != NULL)
-    {
-        midNode = midNode->next;
-        tailNode = tailNode->next->next;
-    }
-
-    /* 1->2->3->4->3->2->1
-             ^        ^
-             mid      tail  <= need to shift to the next
-     */
-    if (tailNode->next != NULL)
-    {
-        tailNode = tailNode->next;
-    }
-
-    reverseLinkedList(midNode->next);
-    //printNode(tailNode);
-
-    struct ListNode *tailNodeTmp = tailNode, *headNodeTmp = head;
-    bool ret = true;
-    while (tailNodeTmp != NULL)
-    {
-        if (tailNodeTmp->val != headNodeTmp->val)
-        {
-            ret = false;
-            break;
-        }
-        tailNodeTmp = tailNodeTmp->next;
-        headNodeTmp = headNodeTmp->next;
-    }
-
-    /* recover the linked list */
-    reverseLinkedList(tailNode);
-    //printNode(head);
-    return ret;
+    return true;
 }
