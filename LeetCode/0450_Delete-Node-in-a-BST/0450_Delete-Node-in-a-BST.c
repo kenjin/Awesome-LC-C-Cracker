@@ -1,12 +1,4 @@
 /**
-
-450. Delete Node in a BST
-
-Ref: https://leetcode.com/problems/delete-node-in-a-bst/
-
- */
-
-/**
  * Definition for a binary tree node.
  * struct TreeNode {
  *     int val;
@@ -15,114 +7,64 @@ Ref: https://leetcode.com/problems/delete-node-in-a-bst/
  * };
  */
 
-typedef struct TreeNode NODE;
+typedef struct TreeNode node_t;
 
-NODE* findBST(NODE *root, int key)
+static node_t *find_lmost(node_t *root, node_t *parent)
 {
-	if (root == NULL)
-	{
-		return NULL;
-	}
+    if (NULL == root->left) {
+        /* Update parent->left to current's right child */
+        if (parent)
+            parent->left = root->right;
+        return root;
+    }
 
-	if (key < root->val)
-	{
-		return findBST(root->left, key);
-	} else if (key > root->val)
-	{
-		return findBST(root->right, key);
-	} else
-	{
-		return root;
-	}
+    return find_lmost(root->left, root);
 }
 
-NODE* findParent(NODE *root, NODE *target)
+static node_t *find_rmost(node_t *root, node_t *parent)
 {
-	/* No Answer */
-	if (root == NULL)
-	{
-		return NULL;        
-	}
+    if (NULL == root->right) {
+        /* Update parent->right to current's left child */
+        if (parent)
+            parent->right = root->left;
+        return root;
+    }
 
-	if (root->left == target || root->right == target)
-	{
-		return root;
-	} else
-	{
-		if (root->val < target->val)
-		{
-			return findParent(root->right, target);
-		} else 
-		{
-			return findParent(root->left, target);
-		}
-	}
+    return find_rmost(root->right, root);
 }
-
-struct TreeNode* deleteNode(struct TreeNode* root, int key)
+struct TreeNode *deleteNode(struct TreeNode *root, int key)
 {
-	/* Find Node */
-	NODE *target = findBST(root, key);
+    if (!root)
+        return NULL;
 
-	if (target != NULL)
-	{
-		if (target->left == NULL && target->right == NULL)
-		{
-			/* Case1: No child*/
-			NODE *p = findParent(root, target);
-			if (p != NULL)
-			{
-				if (p->right != NULL && p->right == target)
-				{
-					p->right = NULL;
-				} else /* p->left != NULL && p->left == target */
-				{
-					p->left = NULL;
-				}
-			}
-			free(target);
-			/* After free "target", if target and root are the same pointer, can not return ... 
-			 * Test case: [0], delete 0
-			 */
-			/* TODO: Clarify it! */
-			if (target == root)
-			{
-				return NULL;
-			}
-			/* TODO: END */
-		} else if (target->left == NULL || target->right == NULL)
-		{
-			/* Case2: One child */
-			NODE *replaceNode;
-			if (target->left == NULL)
-			{
-				replaceNode = target->right;
-			} else  /* target->right == NULL */
-			{
-				replaceNode = target->left;
-			}
-			//printf("Case2: replace target %d to %d\n", target->val, replaceNode->val);
-			/* replace target to target's child */
-			target->val   = replaceNode->val;
-			target->left  = replaceNode->left;
-			target->right = replaceNode->right;
-			free(replaceNode);        
-		} else
-		{
-			/* Case3: Target has two childs case */
+    if (root->val == key) {
+        node_t *tmp = NULL;
+        if (root->left) {
+            /**
+             * Case 1: have left sub-tree
+             * Find right-most child from left sub-tree
+             */
+            tmp = find_rmost(root->left, NULL);
+            tmp->left = (root->left == tmp ? root->left->left : root->left);
+            tmp->right = root->right;
+        } else if (root->right) {
+            /**
+             * Case 2: have only right sub-tree
+             * Find left-most child from right sub-tree
+             */
+            tmp = find_lmost(root->right, NULL);
+            tmp->right =
+                (root->right == tmp ? root->right->right : root->right);
+            tmp->left = NULL;
+        }
+        free(root);
+        return tmp;
+    }
 
-			/* Find next first node who is greater than target node */
-			NODE *nextOne = target->right;  /* two childs case so right child must exist */
-			while (nextOne->left)
-			{
-				nextOne = nextOne->left;
-			}
-			int tmp = nextOne->val;
-			/* find nextOne's parent to updae link to NULL */
-			deleteNode(target, nextOne->val);
-			target->val = tmp;            
-		} 
-	} 
+    if (root->val > key)
+        root->left = deleteNode(root->left, key);
+    else
+        root->right = deleteNode(root->right, key);
 
-	return root;
+    return root;
 }
