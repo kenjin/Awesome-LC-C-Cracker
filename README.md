@@ -1,2 +1,2 @@
 # DSAlgo
-### ./LeetCode: Pure C accepted solution for LeetCode problems
+LeetCode: Pure C accepted solution for LeetCode problems
