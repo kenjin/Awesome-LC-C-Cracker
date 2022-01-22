@@ -22,12 +22,11 @@ Output: 1
  */
 int getSum(int a, int b)
 {
-	if (b == 0)
-	{
+	if (0 == b)
 		return a;
-	}
+
 	unsigned int sum = a ^ b;
-	/* &0x7ffffffff: Clear most significant bit to avoid INT_MIN left shift case */
-	unsigned int carry = (a & b & 0x7ffffffff) << 1;
+	/* &0x7fffffff: Clear most significant bit to avoid INT_MIN left shift case */
+	unsigned int carry = (unsigned int)(a & b & 0x7fffffff) << 1;
 	return getSum(sum, carry);
 }
