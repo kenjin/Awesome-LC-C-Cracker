@@ -24,45 +24,23 @@ Could you do this in one pass?
  *     struct ListNode *next;
  * };
  */
-struct ListNode* removeNthFromEnd(struct ListNode* head, int n) 
+
+struct ListNode* removeNthFromEnd(struct ListNode* head, int n)
 {
-	struct ListNode *curNode = head;
-	struct ListNode *preNode = NULL;
-	/* 
-	 * Create a node is faster n step then original node. 
-	 * So when this node enter to the end, we can make 
-	 * sure that curNode is the Nth node from the end of 
-	 * list.
-	 */
-	struct ListNode *kFastNode = head;
+	struct ListNode *p1 = head, *p2 = head, *prev = NULL;
 	for (int i = 0; i < n; i++)
-	{
-		kFastNode = kFastNode->next;
-	}
-	while (kFastNode)
-	{
-		kFastNode = kFastNode->next;
-		preNode = curNode;
-		curNode = curNode->next;
-	}
+		p1 = p1->next;
 
-	/* n is in the head case */
-	if (NULL == preNode)
-	{
-		struct ListNode *delNode = head;
+	while (p1) {
+		p1 = p1->next;
+		prev = p2;
+		p2 = p2->next;
+	}
+	if (!prev)
 		head = head->next;
-	} else
-	{
-		/* n is in the tail case */
-		if (NULL == curNode->next)
-		{
-			preNode->next = NULL;
-		} else
-		{
-			preNode->next = curNode->next;
-		}
-	}
-	free(curNode);
+	else
+		prev->next = p2->next;
 
+	free(p2);
 	return head;
 }
