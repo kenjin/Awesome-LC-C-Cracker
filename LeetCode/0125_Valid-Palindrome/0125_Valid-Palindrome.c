@@ -5,70 +5,36 @@ Ref: https://leetcode.com/problems/valid-palindrome/
 
  */
 
-bool isAlpha(char c)
-{
-	if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
-	{
-		return true;
-	}
-	return false;
-}
 
-bool isNumeric(char c)
+static inline bool is_alphanumeric(char c)
 {
-	if (c >= '0' && c <= '9')
-	{
+	if ((c >= 'a' && c <= 'z' ) || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
 		return true;
-	}
 	return false;
-}
-
-char adjustLowerCase(char c)
-{
-	if (c >= 'A' && c <= 'Z')
-	{
-		c = c - 'A' + 'a';
-	}
-	return c;
 }
 
 bool isPalindrome(char * s)
 {
-	int len = strlen(s);
 	int head = 0;
-	int tail = len-1;
-	while (head < tail)
-	{
-		while (head < len && !isAlpha(s[head]) && !isNumeric(s[head]))
-		{
+	int tail = strlen(s) - 1;
+	while (head < tail) {
+		/* check char */
+		if (!is_alphanumeric(s[head])) {
 			head++;
+			continue;
 		}
-		if (head >= len)
-		{
-			break;
-		}
-		s[head] = adjustLowerCase(s[head]);
-
-		while (tail >= 0 && !isAlpha(s[tail]) && !isNumeric(s[tail]))
-		{
+		if (!is_alphanumeric(s[tail])) {
 			tail--;
+			continue;
 		}
-		if (tail < 0)
-		{
-			break;
-		}
-		s[tail] = adjustLowerCase(s[tail]);
-
-		if (s[head] == s[tail])
-		{
-			head++;
-			tail--;
-		} else
-		{
+		if ((s[head] | ' ') != (s[tail] | ' '))
 			return false;
-		}
+
+		head++;
+		tail--;
 	}
+
+
 	return true;
 }
-
 
