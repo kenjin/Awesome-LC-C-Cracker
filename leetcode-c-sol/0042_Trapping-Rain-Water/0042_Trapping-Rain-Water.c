@@ -2,85 +2,42 @@ typedef struct {
     int size;
     int cur;
     int *arr;
-} STACK;
+} stack_t;
 
-STACK *stack_create(int size)
+#define stack_create(SIZE) {.size = SIZE, .cur = -1, .arr = malloc(sizeof(int) * SIZE)}
+#define stack_free(S)      do {free(S.arr);} while(0)
+#define stack_push(S, IDX) do {S.arr[++S.cur] = IDX;} while (0)
+#define stack_pop(S)       (S.arr[S.cur--])
+#define stack_top(S)       (S.arr[S.cur])
+#define stack_is_empty(S)  (S.cur == -1 ? true : false)
+#define MIN(A, B) (A < B ? A : B)
+
+int trap(int* height, int heightSize)
 {
-    STACK *obj = malloc(sizeof(STACK));
-    obj->size = size;
-    obj->cur = -1;
-    obj->arr = malloc(sizeof(int) * size);
-    return obj;
-}
-
-static inline bool stack_is_empty(STACK *obj)
-{
-    return (obj->cur == -1 ? true : false);
-}
-
-static inline void stack_push(STACK *obj, int idx)
-{
-    obj->cur += 1;
-    obj->arr[obj->cur] = idx;
-}
-
-static int stack_pop(STACK *obj)
-{
-    if (stack_is_empty(obj)) {
-        printf("WARNING: empty stack!\n");
-        return;
-    }
-
-    obj->cur -= 1;
-    return obj->arr[obj->cur + 1];
-}
-
-static inline int stack_top(STACK *obj)
-{
-    if (stack_is_empty(obj))
-        return -1;
-    return obj->arr[obj->cur];
-}
-
-static inline void stackFree(STACK *obj)
-{
-    free(obj->arr);
-    free(obj);
-}
-
-int trap(int *height, int height_sz)
-{
-    STACK *s = stack_create(height_sz + 1);
-
     int ret = 0;
-    for (int i = 0; i < height_sz; i++) {
-        if (stack_is_empty(s) && height[i] == 0)
+    stack_t s = stack_create(heightSize);
+    for (int i = 0; i < heightSize; i++) {
+        int right_h = height[i];
+        if (stack_is_empty(s) && right_h == 0)
             continue;
 
-        if (!stack_is_empty(s)) {
-            int top = height[stack_top(s)];
-            if (height[i] > top) {
-                int max_height = height[i];
-                int lvalley_idx = stack_pop(s);
-                while (!stack_is_empty(s)) {
-                    int chk_idx = stack_pop(s);
-                    int diff = (max_height > height[chk_idx])
-                                   ? height[chk_idx] - height[lvalley_idx]
-                                   : max_height - height[lvalley_idx];
-
-                    if (!diff)
-                        ret += diff * (i - chk_idx - 1);
-                    if (max_height < height[chk_idx]) {
-                        stack_push(s, chk_idx);
-                        break;
-                    }
-                    lvalley_idx = chk_idx;
+        if (!stack_is_empty(s) && 
+                height[stack_top(s)] <= right_h) {
+            int valley_idx = stack_pop(s);
+            while (!stack_is_empty(s)) {
+                int tmp_idx = stack_pop(s);
+                int tmp_h = (MIN(right_h, height[tmp_idx]) - height[valley_idx]);
+                ret += (tmp_h * (i - tmp_idx - 1));
+                // Pop until find the higher one, push it back to keep monotonic stack
+                if (height[tmp_idx] > right_h) {
+                    stack_push(s, tmp_idx);
+                    break;
                 }
+                valley_idx = tmp_idx;
             }
         }
         stack_push(s, i);
     }
-
-    stackFree(s);
+    stack_free(s);
     return ret;
 }
