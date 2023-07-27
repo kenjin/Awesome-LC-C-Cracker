@@ -6,38 +6,50 @@
  * };
  */
 
-
-typedef struct ListNode NODE;
-void reorderList(struct ListNode *head)
+static inline struct ListNode* reverse_list(struct ListNode* head)
 {
-    if (!head)
+    struct ListNode root = {.next = NULL};
+    while (head) {
+        struct ListNode *tmp = head->next;
+        head->next = root.next;
+        root.next = head;
+        head = tmp;
+    }
+    return root.next;
+}
+
+void reorderList(struct ListNode* head)
+{
+    if (NULL == head || NULL == head->next)
         return;
 
-    NODE *p1 = head, *p2 = head;
-    int len = 0;
-    while (p2 && p2->next) {
-        len++;
-        p2 = p2->next->next;
-        p1 = (!p2 ? p1 : p1->next);
+    // Find the mid of the list
+    struct ListNode *fast = head, *slow = head, *prev = NULL;
+    while (fast && fast->next) {
+        fast = fast->next->next;
+        prev = slow;
+        slow = slow->next;
     }
 
-    NODE **stack = malloc(sizeof(NODE *) * (len + 1));
-    int s_ctr = 0;
-    p1 = p1->next;
-    while (p1) {
-        stack[s_ctr++] = p1;
-        p1 = p1->next;
-    }
-    NODE *cur = head, *tmp = NULL;
-    for (int i = s_ctr - 1; i >= 0; i--) {
-        tmp = cur->next;
-        cur->next = stack[i];
-        stack[i]->next = tmp;
-        cur = tmp;
+    struct ListNode *half;
+    if (fast && NULL == fast->next) {
+        // odd len
+        half = slow->next;
+        slow->next = NULL;
+    } else {
+        // even len
+        half = slow;
+        prev->next = NULL;
     }
 
-    if (tmp)
-        tmp->next = NULL;
-
-    free(stack);
+    // reverse
+    half = reverse_list(half);
+    while (half) {
+        struct ListNode *tmp1 = head->next;
+        struct ListNode *tmp2 = half->next;
+        head->next = half;
+        half->next = tmp1;
+        half = tmp2;
+        head = tmp1;
+    }
 }
