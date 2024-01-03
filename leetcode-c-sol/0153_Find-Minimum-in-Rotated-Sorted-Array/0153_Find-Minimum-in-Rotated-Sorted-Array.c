@@ -22,42 +22,27 @@ Output: 0
 
 int findMin(int* nums, int numsSize)
 {
-    if (numsSize == 0)
-    {
-        return 0;
-    }
-
-    int head = 0;
-    int tail = numsSize-1;
-    while (head < tail)
-    {
-        int pivot = head+(tail-head)/2;
-        /* (head == tail) or (head = tail -1)*/
-        if (head == pivot || tail == pivot)
-        {
+    int head = 0, tail = numsSize - 1;
+    while (head < tail) {
+        int pivot = head + ((tail - head) >> 1);
+        if (head == pivot || tail == pivot) {
             return (nums[head] < nums[tail] ? nums[head] : nums[tail]);
         }
 
-        if (nums[head] < nums[pivot] && nums[pivot] > nums[tail])
-        {
-			/* #pivot is at right
-			 *
-		 	 *  [3,4,5,1,2]  
-		 	 *   *   *   *
-		 	 *         ^
-		 	 */
+        if (nums[pivot] > nums[head] && nums[pivot] > nums[tail]) {
+            // pivot is at right side
+            // ex: [3, 4, 5, 1, 2]
+            //      ^     ^     ^
+            //      H     P     T
             head = pivot;
-		} else 
-		{
-			/*  #pivot isat left 
-			 *
-			 *  [1,2,3,4,5] or [5,1,2,3,4]
-			 *   *   *   *      *   *   *
-			 *   ^              ^
-			 */
+        } else {
+            // pivot is at left side
+            // ex: [1, 2, 3, 4, 5] or [5, 1, 2, 3, 4]
+            //      ^     ^     ^      ^     ^     ^
+            //      H     P     T      H     P     T
             tail = pivot;
         }
     }
+
     return nums[tail];
 }
-
