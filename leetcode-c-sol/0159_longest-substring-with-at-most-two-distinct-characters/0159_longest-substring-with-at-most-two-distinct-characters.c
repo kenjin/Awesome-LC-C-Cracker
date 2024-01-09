@@ -1,43 +1,30 @@
+#define MAX(a, b) (a > b ? a : b)
 
-int lengthOfLongestSubstringTwoDistinct(char * s)
-{    
-	int sLen = strlen(s);
-	if (sLen == 0)
-	{
-		return 0;
-	}
+int lengthOfLongestSubstringTwoDistinct(char* s) {
+    int slen = strlen(s);
+    char prev = s[0];
+    char set[2] = {prev, 0};
 
-	char pre = s[0];    
-	char set[2] = {0};
-	set[0] = pre;
-
-	int ret = 0, repeat = 1, curCtr = 1, toggle = 0;
-	for (int i = 1; i < sLen; i++)
-	{
-		if (s[i] != pre)
-		{
-			toggle ^= 1;
-			// Find third distinct character
-			if (set[toggle] != 0 && set[toggle] != s[i])
-			{
-				// Update result
-				ret = (curCtr > ret ? curCtr : ret);                
-				curCtr = repeat+1;                                
-			} else
-			{
-				curCtr ++;
-			}            
-			set[toggle] = s[i];
-			repeat = 1;
-		} else
-		{            
-			curCtr++;
-			repeat++;            
-		}
-
-		pre = s[i];
-	}
-
-	return (curCtr > ret ? curCtr : ret);
+    int ret= 0, tmp_ret = 1, cur_repeat = 1, toggle = 0;
+    for (int i = 1; i < slen; i++) {
+        if (s[i] != prev) {
+            toggle ^= 1;
+            if (set[toggle] != 0 && set[toggle] != s[i]) {
+                // Find third distinct char, update the temp result.
+                ret = MAX(ret, tmp_ret);
+                tmp_ret = cur_repeat + 1;
+            } else {
+                // Fin second distinct char, keep counting temp max.
+                tmp_ret++;
+            }
+            // Update the disctinct char and reset it's repeat ctr.
+            set[toggle] = s[i];
+            cur_repeat = 1;
+        } else {
+            cur_repeat++;
+            tmp_ret++;
+        }
+        prev = s[i];
+    }
+    return MAX(ret, tmp_ret);
 }
-
