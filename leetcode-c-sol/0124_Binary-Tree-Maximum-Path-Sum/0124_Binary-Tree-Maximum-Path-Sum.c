@@ -1,49 +1,33 @@
-int maxPathSumHelper(struct TreeNode* root, int *max)
+#define MAX(a, b) (a > b ? a : b)
+
+int mps_helper(struct TreeNode* root, int *max)
 {
-	if (root == NULL)
-	{
-		return 0;
-	}
-	int lMax = INT_MIN, rMax = INT_MIN;
-	int lSubMaxLen = maxPathSumHelper(root->left, &lMax);
-	int rSubMaxLen = maxPathSumHelper(root->right, &rMax);    
+    if (!root)
+        return 0;
 
-	// count the sub-tree maxPathSum 
-	int tmpMax = root->val;
-	if (lSubMaxLen > 0)
-	{
-		tmpMax += lSubMaxLen;
-	}
-	if (rSubMaxLen > 0)
-	{
-		tmpMax += rSubMaxLen;
-	}
+    int lmax = INT_MIN, rmax= INT_MIN;
+    int lret = mps_helper(root->left, &lmax);
+    int rret = mps_helper(root->right, &rmax);
 
-	if (lMax > tmpMax)
-	{
-		tmpMax = lMax;
-	}
-	if (rMax > tmpMax)
-	{
-		tmpMax = rMax;
-	}
-	*max = tmpMax;
+    int tmp_max = root->val;
+    if (lret > 0)
+        tmp_max += lret;
+    if (rret > 0)
+        tmp_max += rret;
 
-	// return the max path (root, root+left-path, root+right-path)
-	int tmpRet = root->val;
-	if (lSubMaxLen < 0 && rSubMaxLen < 0)
-	{
-		return tmpRet;
-	} else
-	{
-		return lSubMaxLen > rSubMaxLen ? (lSubMaxLen + root->val) : (rSubMaxLen + root->val);
-	}
+    *max = MAX(rmax, lmax);
+    *max = MAX(*max, tmp_max);
+
+    // return max path sum(root / root+left / root+right) with current node
+    if (lret < 0  && rret < 0)
+        return root->val;
+    else
+        return (root->val + MAX(lret, rret));
 }
 
 int maxPathSum(struct TreeNode* root)
 {
-	int max = 0;
-	maxPathSumHelper(root, &max);    
-	return max;
+    int max = INT_MIN;
+    mps_helper(root, &max);
+    return max;
 }
-
