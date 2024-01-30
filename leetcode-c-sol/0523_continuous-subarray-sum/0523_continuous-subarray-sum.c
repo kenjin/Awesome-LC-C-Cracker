@@ -1,132 +1,78 @@
-struct hashInfo
+typedef struct
 {
-	int idx;
-	int val;   
-};
+    int val;
+    int idx;
+} data_t;
 
-typedef struct hashT
+typedef struct
 {
-	int size;
-	int mod;
-	struct hashInfo **arr;
-}HASH;
+    int sz;
+    data_t *d;
+} hash_t;
 
-int hash(HASH *obj, int key) 
+static inline int do_hash(hash_t *h, int key) 
 {
-	int r = key % obj->mod;
-	return r < 0 ? r + obj->size : r;
+    int r = key % h->sz;
+    return r < 0 ? r + h->sz : r;
 }
 
-HASH* createHash(int size)
+static void add_hash(hash_t *h, int target, int t_idx)
 {
-	HASH *obj = malloc(sizeof(HASH));
-	obj->size = size;
-	obj->mod = size;
-	obj->arr = malloc(sizeof(struct hashInfo)*(size));
-	for (int x = 0; x < size; x++)
-	{
-		struct hashInfo *newInfo = malloc(sizeof(struct hashInfo));
-		obj->arr[x] = newInfo;
-		newInfo->idx = -1;
-	}
-	return obj;
+    int idx = do_hash(h, target);
+    while (h->d[idx].idx)
+        idx = (idx + 1) % h->sz;
+
+    h->d[idx].val = target;
+    h->d[idx].idx = t_idx + 1;
 }
 
-void addHash(HASH *ht, int key, int idx) 
+static int find_hash(hash_t *h, int target)
 {
-	int index = hash(ht, key);
-	while (ht->arr[index]->idx != -1) 
-	{
-		index++;
-		index %= ht->size;
-	}
-	ht->arr[index]->idx = idx;
-	ht->arr[index]->val = key;
+    int idx = do_hash(h, target);
+    while (h->d[idx].idx) {
+        if (h->d[idx].val == target)
+            return h->d[idx].idx - 1;
+        idx = (idx + 1) % h->sz;
+    }
+    return -1;
 }
 
-int findHash(HASH *ht, int target) 
+static hash_t* create_hash(int sz)
 {
-	int index = hash(ht, target);
-	while (ht->arr[index]->idx != -1) 
-	{
-		if (ht->arr[index]->val == target) 
-		{
-			return ht->arr[index]->idx;
-		}
-		index++;
-		index %= ht->size;
-	}
-	return -1;
+    hash_t *obj = malloc(sizeof(hash_t));
+    obj->sz = sz;
+    obj->d = calloc(sz, sizeof(data_t));
+    return obj;
 }
 
-void releaseHash(HASH *ht)
+static inline void release_hash(hash_t *h)
 {
-	for (int i = 0; i < ht->size; i++)
-	{
-		free(ht->arr[i]);
-	}
-	free(ht->arr);
-	free(ht);
+    free(h->d);
+    free(h);
 }
 
 bool checkSubarraySum(int* nums, int numsSize, int k)
 {
-	bool ret = false;
-	// corner case: k is negative
-	k = (k < 0 ? k*-1 : k);
-	// corner case: consecutive zero check
-	for (int i = 1; i < numsSize; i++)
-	{
-		if (nums[i] == 0 && nums[i-1] == 0)
-		{
-			return true;
-		}
-	}
-	// corner case: k is zero and no consecutive zero
-	if (k == 0)
-	{
-		return false;
-	}
+    int rem = 0;
+    bool ret = false;
+    hash_t *h = create_hash(numsSize << 1);
 
-	int minSize = (numsSize < k ? numsSize : k);
-	int *modSet = malloc(sizeof(int)*minSize);
-	int setCtr = 0;
+    for (int i = 0; i < numsSize; i++) {
+        rem = (rem + nums[i]) % k;
+        // Subarray len >= 2 and prefix sum could be divided by k
+        if (i > 0 && rem == 0) {
+            ret = true;
+            break;
+        }
+        int idx = find_hash(h, rem);
+        if (idx != -1 && (i - idx) > 1){
+            ret = true;
+            break;
+        }
+        add_hash(h, rem, i);
+        printf("%d: Add rem %d \n", i, rem);
+    }
 
-	HASH *h = createHash(minSize);
-	int rem = 0;
-	for (int i = 0; i < numsSize; i++)
-	{
-		if (nums[i] == 0)
-		{
-			continue;
-		}
-
-		rem = (rem + nums[i]) % k;
-		if (i > 0 && rem == 0)
-		{
-			ret = true;
-			break;
-		}
-
-		int findRet = findHash(h, rem);
-		if (-1 == findRet)
-		{
-			modSet[setCtr] = i;
-			addHash(h, rem, setCtr);
-			setCtr++;
-		} else
-		{
-			if (modSet[findRet] != -1 && (i - modSet[findRet]) > 1)
-			{
-				ret = true;
-				break;
-			}
-			modSet[findRet] = i;   
-		}
-	}
-
-	free(modSet);
-	releaseHash(h);
-	return ret;
+    release_hash(h);
+    return ret;
 }
-
