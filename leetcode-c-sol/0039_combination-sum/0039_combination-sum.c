@@ -1,53 +1,42 @@
 
-void combinationSumHelper(int *num, int numSize, int *tmp, int tmpSize, int curIdx, int ***ret, int *retSize, int **retColSize, int target)
-{
-	if (target < 0)
-	{
-		return;
-	}
-	if (target == 0)
-	{
-		*ret = realloc(*ret, sizeof(int *)*(*retSize + 1));
-		*retColSize = realloc(*retColSize, sizeof(int)*(*retSize + 1));
-		(*ret)[*retSize] = malloc(sizeof(int)*tmpSize);
-		(*retColSize)[*retSize] = tmpSize;
-		memcpy((*ret)[*retSize], tmp, sizeof(int)*tmpSize);
-		*retSize += 1;
-		return;
-	}
+#define MAX_COMBINATIONS (150)
+static bool backtrack(int target, int cur_idx, int* candidates,
+                      int candidatesSize, int*** ret, int* returnSize,
+                      int** returnColumnSizes, int sum, int* tmp, int tmp_ctr) {
+    if (sum >= target) {
+        if (sum == target) {
+            (*ret)[*returnSize] = malloc(sizeof(int) * tmp_ctr);
+            (*returnColumnSizes)[*returnSize] = tmp_ctr;
+            memcpy((*ret)[*returnSize], tmp, sizeof(int) * tmp_ctr);
+            *returnSize += 1;
+        }
+        // Return true to indicade that we don't need to add later element
+        // because sum is already >= target.
+        return true;
+    }
 
-	for (int i = curIdx; i < numSize; i++)
-	{
-		tmp[tmpSize] = num[i];
-		combinationSumHelper(num, numSize, tmp, tmpSize+1, i, ret, retSize, retColSize, target-num[i]);
-	}
-
+    for (int i = cur_idx; i < candidatesSize; i++) {
+        tmp[tmp_ctr] = candidates[i];
+        if (backtrack(target, i, candidates, candidatesSize, ret, returnSize,
+                      returnColumnSizes, sum + candidates[i], tmp, tmp_ctr + 1))
+            break;
+    }
+    return false;
 }
 
-int compare(const void *a, const void *b)
-{
-	int *n1 = (int *)a;
-	int *n2 = (int *)b;
+static int compare(const void* a, const void* b) { return *(int*)a - *(int*)b; }
 
-	return *n1 - *n2;
-}
-
-/**
- * Return an array of arrays of size *returnSize.
- * The sizes of the arrays are returned as *returnColumnSizes array.
- * Note: Both returned array and *columnSizes array must be malloced, assume caller calls free().
- */
-int** combinationSum(int* candidates, int candidatesSize, int target, int* returnSize, int** returnColumnSizes)
-{
-	qsort(candidates, candidatesSize, sizeof(int), compare);
-	int maxSize = target / candidates[0] + 1;
-	int *tmp = malloc(sizeof(int)*maxSize);
-	int **ret = malloc(sizeof(int*));
-	*returnColumnSizes = malloc(sizeof(int));
-	*returnSize = 0;
-	combinationSumHelper(candidates, candidatesSize, tmp, 0, 0, &ret, returnSize, returnColumnSizes, target);
-
-	free(tmp);
-	return ret;
+int** combinationSum(int* candidates, int candidatesSize, int target,
+                     int* returnSize, int** returnColumnSizes) {
+    qsort(candidates, candidatesSize, sizeof(int), compare);
+    int max_sz = target / candidates[0] + 1;
+    int* tmp = malloc(sizeof(int) * max_sz);
+    int** ret = malloc(sizeof(int*) * MAX_COMBINATIONS);
+    *returnColumnSizes = malloc(sizeof(int) * MAX_COMBINATIONS);
+    *returnSize = 0;
+    backtrack(target, 0, candidates, candidatesSize, &ret, returnSize,
+              returnColumnSizes, 0, tmp, 0);
+    free(tmp);
+    return ret;
 }
 
