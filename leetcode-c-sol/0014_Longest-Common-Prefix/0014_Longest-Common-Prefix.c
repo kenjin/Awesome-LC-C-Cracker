@@ -21,37 +21,33 @@ Note:
 All given inputs are in lowercase letters a-z.
 
  */
-char * longestCommonPrefix(char ** strs, int strsSize)
+
+
+char* longestCommonPrefix(char** strs, int strsSize)
 {
-	if (strsSize == 0)
-	{
-		return "";
-	}
+    // Edge case: return the string directly if we only have one.
+    if (strsSize == 1)
+        return strs[0];
 
-	/* Calculate min len of **strs */
-	int min = INT_MAX;
-	for (int i = 0; i < strsSize; i++)
-	{
-		if (strlen(strs[i]) < min)
-		{
-			min = strlen(strs[i]);
-		}
-	}
+    int prefix_idx = 0;
+    while (1) {
+        int cur_char = strs[0][prefix_idx];
+        bool need2break = false;
+        for (int i = 1; i < strsSize; i++) {
+            // Break the loop if reaching the end of the string or if the
+            // character of the prefix is not equal to that of the others.
+            if (strs[i][prefix_idx] == 0 || strs[i][prefix_idx] != cur_char) {
+                need2break = true;
+                break;
+            }
+        }
+        if (need2break)
+            break;
 
-	int common = 0;
-	for (int i = 0; i < min; i++)
-	{
-		char cur = strs[0][i];        
-		for (int j = 1; j < strsSize; j++)
-		{
-			if (strs[j][i] != cur)
-			{                
-				strs[0][common] = '\0';
-				return strs[0];
-			}
-		}
-		common++;
-	}       
-	strs[0][common] = '\0';  
-	return strs[0];
+        // Get the common prefix index, continue to try the next one.
+        prefix_idx++;
+    }
+
+    strs[0][prefix_idx] = 0;
+    return strs[0];
 }
