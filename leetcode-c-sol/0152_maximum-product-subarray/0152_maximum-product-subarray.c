@@ -1,21 +1,15 @@
-
-#define MAX(a, b) (a > b ? a : b)
 #define MIN(a, b) (a < b ? a : b)
+#define MAX(a, b) (a > b ? a : b)
 
 int maxProduct(int* nums, int numsSize)
 {
-    int dp_pos = nums[0], dp_neg = nums[0], ret = nums[0];
+    int max = nums[0], min = nums[0], ret = nums[0];
     for (int i = 1; i < numsSize; i++) {
-        int tmp1 = nums[i] * dp_pos;
-        int tmp2 = nums[i] * dp_neg;
-        if (tmp1 > tmp2){
-            dp_pos = MAX(tmp1, nums[i]);
-            dp_neg = MIN(tmp2, nums[i]);
-        } else {
-            dp_pos = MAX(tmp2, nums[i]);
-            dp_neg = MIN(tmp1, nums[i]);
-        }
-        ret = MAX(ret, dp_pos);
+        int tmp_max = nums[i] * (nums[i] > 0 ? max : min);
+        int tmp_min = nums[i] * (nums[i] > 0 ? min : max);
+        max = MAX(tmp_max, nums[i]);
+        min = MIN(tmp_min, nums[i]);
+        ret = MAX(ret, max);
     }
     return ret;
 }
