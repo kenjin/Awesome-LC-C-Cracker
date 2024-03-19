@@ -1,58 +1,37 @@
-/**
-	Given a char array representing tasks CPU need to do. It contains capital letters A to Z where different 
-	letters represent different tasks. Tasks could be done without original order. Each task could be done 
-	in one interval. For each interval, CPU could finish one task or just be idle.
-	However, there is a non-negative cooling interval n that means between two same tasks, there must be at least n intervals that CPU are doing different tasks or just be idle.
-	You need to return the least number of intervals the CPU will take to finish all the given tasks.
+/***
+Approach: Greedy
 
-	Example:
-	Input: tasks = ["A","A","A","B","B","B"], n = 2
-	Output: 8
-	Explanation: A -> B -> idle -> A -> B -> idle -> A -> B.
+1. General Case
+(Count of tasks with the maximum frequency - 1) x (n + 1) + (Number of tasks with the maximum frequency)
+=> e.g. tasks = ["A","A","A","A","B","B","B","B","C","D"], n = 3
 
- */
-#define  MAX(a ,b)  (a > b ? a : b)
+        [A, B, C] - [A, B, D] - [A, B, NULL] - [A, B]
+        <-----------  3 groups  ----------->
+        => max:  tasks with the maximum frequency (A = 4, B = 4)
+        => max_task_ctr = total count of same max_repeated_task (A and B are both "4")
+        => return (max - 1) * (n + 1) + max_task_ctr
+
+2. If the total time required for tasks exceeds the minimum interval calculated above, the answer is the total time required for tasks.
+=> e.g. tasks = ["A", "A", "A", "B", "B", "C", "C", "D", "D"], n = 2
+
+***/
+
 int leastInterval(char* tasks, int tasksSize, int n) {
-	/**
-	Input: tasks = ["A","A","A","A","B","B","B","B","C","D"], n = 3
+    int ret = 0, max = 0, max_task_ctr = 0;
+    int task_ctr[26] = {0};
 
-	(1) General Case
-		[A, B, C] - [A, B, D] - [A, B, NULL] - [A, B]
-		<-----------  3 groups  ----------->
-		=> group_count = max_repeated_task - 1 (EX: A = 4-1)
-		=> remaining_tasks = total count of same max_repeated_task  (EX: A and B are both "4")            
-		return Ans = (group_count)*n + remaining_tasks
+    for (int i = 0; i < tasksSize; i++)
+        task_ctr[(tasks[i] - 'A')] += 1;
 
-	(2) Special Case
-		if (tasksSize > Ans) return tasksSize
+    for (int i = 0; i < 26; i++) {
+        if (task_ctr[i] > max) {
+            max_task_ctr = 1;
+            max = task_ctr[i];
+        } else if (task_ctr[i] == max) {
+            max_task_ctr++;
+        }
+    }
 
-	*/
-	int ret = 0, max = 0, remain = 0;
-	int taskCtr[26];
-
-	memset(taskCtr, 0, sizeof(int)*26);
-	for (int i = 0; i < tasksSize; i++)
-	{
-		taskCtr[(tasks[i]-'A')] += 1;
-	}
-
-	for (int i = 0; i < 26; i++)
-	{
-		if (taskCtr[i] > max)
-		{
-			max = taskCtr[i];
-		}
-	}
-
-	for (int i = 0; i < 26; i++)
-	{
-		if (taskCtr[i] == max)
-		{
-			max = taskCtr[i];
-			remain++;
-		}
-	}
-
-	ret = (max-1)*(n+1) + remain;
-	return MAX(ret, tasksSize);
+    ret = (max - 1) * (n + 1) + max_task_ctr;
+    return (ret > tasksSize ? ret : tasksSize);
 }
