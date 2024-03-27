@@ -1,25 +1,16 @@
-
 int numSubarrayProductLessThanK(int* nums, int numsSize, int k)
 {
-	if (k <= 1) 
-	{
-		return 0;
-	}
-
-	int ret = 0, prod = 1;
-	int left = 0, right = 0;
-	while (right < numsSize)
-	{
-		prod *= nums[right];
-		while (prod >= k)
-		{
-			prod /= nums[left];
-			left++;
-		}
-		ret += (right - left + 1);
-
-		right++;
-	}
-	return ret;
+    int prod_res = 1, head = 0, ret = 0;
+    for (int tail = 0; tail < numsSize; tail++) {
+        // Check the largest window size to satisfy that the subarray product is
+        // less than k.
+        prod_res *= nums[tail];
+        while (prod_res >= k && head <= tail) {
+            prod_res /= nums[head];
+            head++;
+        }
+        ret += (tail - head + 1);
+    }
+    return ret;
 }
 
