@@ -1,249 +1,137 @@
-/**
+// At most 2 * 105 calls will be made to insert, remove, and getRandom.
+#define HASH_TABE_SIZE (200001)
 
-380. Insert Delete GetRandom O(1) [M]
-Ref: https://leetcode.com/problems/insert-delete-getrandom-o1/
-
-Design a data structure that supports all following operations in average O(1) time.
-
-insert(val): Inserts an item val to the set if not already present.
-remove(val): Removes an item val from the set if present.
-getRandom: Returns a random element from current set of elements. Each element must have the same probability of being returned.
-Example:
-
-// Init an empty set.
-RandomizedSet randomSet = new RandomizedSet();
-
-// Inserts 1 to the set. Returns true as 1 was inserted successfully.
-randomSet.insert(1);
-
-// Returns false as 2 does not exist in the set.
-randomSet.remove(2);
-
-// Inserts 2 to the set, returns true. Set now contains [1,2].
-randomSet.insert(2);
-
-// getRandom should return either 1 or 2 randomly.
-randomSet.getRandom();
-
-// Removes 1 from the set, returns true. Set now contains [2].
-randomSet.remove(1);
-
-// 2 was already in the set, so return false.
-randomSet.insert(2);
-
-// Since 2 is the only number in the set, getRandom always return 2.
-randomSet.getRandom();
-
- */
-
-typedef struct nodeInfo NODE;
-struct nodeInfo
+typedef struct __node
 {
-	int key;
-	int idx;
-	NODE *next;
-};
+    int key;
+    int idx;
+    struct __node *next;
+} node_t;
 
 typedef struct 
 {
-	/* Hash table for insert/delete */
-	int hashMod;
-	NODE **bucket;
-	/* Array for random access*/
-	int *arr;
-	int arrSize;
-	int arrTail;
+    int size;
+    /* Hash table for insert/delete */
+    node_t *bucket;
+    /* Array for random access */
+    int *arr;
+    int arr_tail;
 } RandomizedSet;
 
-
-NODE* createNode()
+static inline int do_hash(RandomizedSet *obj, int val)
 {
-	NODE *newOne = malloc(sizeof(NODE));
-	newOne->idx = -1;
-	newOne->next = NULL;
-	return newOne;
-}
-
-#define HASH_TABE_SIZE (30000)
-#define MALLOC_UNIT (500)
-RandomizedSet* randomizedSetCreate() 
-{
-	RandomizedSet* obj = malloc(sizeof(RandomizedSet));
-	obj->hashMod = HASH_TABE_SIZE;
-	obj->bucket = malloc(sizeof(NODE *)*HASH_TABE_SIZE);
-	for (int i = 0; i < HASH_TABE_SIZE; i++)
-	{
-		obj->bucket[i] = createNode();
-	}
-	obj->arr = calloc(MALLOC_UNIT, sizeof(int));
-	obj->arrSize = MALLOC_UNIT;
-	obj->arrTail = -1;
-
-	srand(time(NULL));
-	return obj;
+    int idx = val % obj->size;
+    return (idx < 0 ? idx + obj->size : idx);
 }
 
 /* Assmue the val must exist */
-void updateHashNodeIdx(RandomizedSet *obj, int val, int newIdx)
+static void update_idx_to_hash(RandomizedSet *obj, int val, int new_idx)
 {
-	int tmpVal = (val < 0 ? (val+INT_MAX) : val); /* negative val case */
-	int hashIdx = tmpVal % obj->hashMod;
-
-	NODE *tmp = obj->bucket[hashIdx];
-	while (tmp->idx != -1)
-	{
-		if (tmp->key == val)
-		{
-			tmp->idx = newIdx;
-			return;
-		}
-		tmp = tmp->next;
-	}
+    int hashIdx = do_hash(obj, val);   
+    node_t *root = obj->bucket[hashIdx].next;
+    while (root) {
+        if (root->key == val) {
+            root->idx = new_idx;
+            return;
+        }
+        root = root->next;
+    }
 }
 
-bool findHash(RandomizedSet *obj, int val)
+static bool find_hash(RandomizedSet *obj, int val)
 {
-	int tmpVal = (val < 0 ? (val+INT_MAX) : val); /* negative val case */
-	int hashIdx = tmpVal % obj->hashMod;
+    int hash_idx = do_hash(obj, val);
+    node_t *root = obj->bucket[hash_idx].next;
+    while (root) {
+        if (root->key == val)
+            return true;
+        root = root->next;
+    }
+    return false;
+}
 
-	NODE *tmp = obj->bucket[hashIdx];
-	while (tmp->idx != -1)
-	{
-		if (tmp->key == val)
-		{
-			return true;
-		}
-		tmp = tmp->next;
-	}
-	return false;
+RandomizedSet* randomizedSetCreate() 
+{
+    RandomizedSet* obj = malloc(sizeof(RandomizedSet));
+    obj->size = HASH_TABE_SIZE;
+    obj->bucket = calloc(HASH_TABE_SIZE, sizeof(node_t));
+    obj->arr = calloc(HASH_TABE_SIZE, sizeof(int));
+    obj->arr_tail = -1;
+    srand(time(NULL));
+    return obj;
 }
 
 /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
 bool randomizedSetInsert(RandomizedSet* obj, int val) 
 {
-	/* Already in the set */
-	if (findHash(obj, val))
-	{
-		return false;
-	}
-	/* Update array at first, so we can get position idx */
-	obj->arrTail += 1;
-	/* dynamic allocation */
-	if ((obj->arrTail+1) == obj->arrSize)
-	{
-		obj->arrSize += MALLOC_UNIT;
-		obj->arr = realloc(obj->arr, sizeof(int)*obj->arrSize);
-	}
-	obj->arr[obj->arrTail] = val;
+    /* Already in the set */
+    if (find_hash(obj, val))
+        return false;
 
-	/* Update Hash */
-	int tmpVal = (val < 0 ? (val+INT_MAX) : val); /* negative val case */
-	int hashIdx = tmpVal % obj->hashMod;
-	NODE *newNode = createNode();
-	/* First bucket set is empty */
-	if (obj->bucket[hashIdx]->idx == -1)
-	{
-		obj->bucket[hashIdx]->key = val;
-		obj->bucket[hashIdx]->idx = obj->arrTail; /* record the position in array */
-		obj->bucket[hashIdx]->next = newNode;
-	} else
-	{
-		NODE *tmp = obj->bucket[hashIdx];
-		while (tmp->idx != -1)
-		{
-			tmp = tmp->next;
-		}
-		tmp->key = val;
-		tmp->idx = obj->arrTail;
-		tmp->next = newNode;
-	}
-
-	return true;
+    /* Update array at first, so we can get position idx */
+    obj->arr_tail += 1;
+    obj->arr[obj->arr_tail] = val;
+    
+    /* Update Hash */
+    int hash_idx = do_hash(obj, val);   
+    node_t *new_node = malloc(sizeof(node_t));
+    new_node->key = val;
+    new_node->idx = obj->arr_tail; /* record the position in array */
+    new_node->next = obj->bucket[hash_idx].next;
+    obj->bucket[hash_idx].next = new_node;
+    return true;
 }
 
 /** Removes a value from the set. Returns true if the set contained the specified element. */
 bool randomizedSetRemove(RandomizedSet* obj, int val) 
 {
-	/* Already in the set */
-	if (!findHash(obj, val))
-	{
-		return false;
-	}
-	int tmpVal = (val < 0 ? (val+INT_MAX) : val); /* negative val case */
-	int hashIdx = tmpVal % obj->hashMod;
+    /* Already in the set */
+    if (!find_hash(obj, val))
+        return false;
 
-	int arrPos;
-	/* Remove the val from the first of bucket*/
-	if (obj->bucket[hashIdx]->key == val)
-	{
-		arrPos = obj->bucket[hashIdx]->idx;
-		NODE *tmp = obj->bucket[hashIdx]->next;
-		free(obj->bucket[hashIdx]);
-		obj->bucket[hashIdx] = tmp;
-	} else
-	{
-		NODE *pre = NULL;
-		NODE *tmp = obj->bucket[hashIdx];
-		while (tmp->key != val)
-		{
-			pre = tmp;
-			tmp = tmp->next;
-		}
-		pre->next = tmp->next;
-		arrPos = tmp->idx;
-		free(tmp);
-	}
-
-	/* Remove from array*/
-	/* Swap the deleted element and tail element*/
-	if (obj->arrTail != arrPos)
-	{
-		int tmpNum = obj->arr[obj->arrTail];
-		obj->arr[obj->arrTail] = obj->arr[arrPos];
-		obj->arr[arrPos] = tmpNum;
-		/* Update the hash idx of tail element*/
-		updateHashNodeIdx(obj, tmpNum, arrPos);
-		obj->arrTail -= 1;
-	} else
-	{
-		obj->arrTail -= 1;
-	}
-
-	return true;
+    int hash_idx = do_hash(obj, val);
+    /* Remove the val from the first of bucket*/
+    node_t **indir = &(obj->bucket[hash_idx].next);
+    while (*indir && (*indir)->key != val) {
+       indir = &(*indir)->next;
+    }
+   int arr_pos = (*indir)->idx;
+   node_t *fnode = *indir;
+   *indir = (*indir)->next;
+   free(fnode);
+    
+    /* Remove from array*/
+    /* Swap the deleted element and tail element */
+    if (obj->arr_tail != arr_pos) {
+        int tmp = obj->arr[obj->arr_tail];
+        obj->arr[obj->arr_tail] = obj->arr[arr_pos];
+        obj->arr[arr_pos] = tmp;
+        update_idx_to_hash(obj, tmp, arr_pos);
+        obj->arr_tail -= 1;
+    } else {
+        obj->arr_tail -= 1;
+    }
+    return true;
 }
 
 /** Get a random element from the set. */
 int randomizedSetGetRandom(RandomizedSet* obj) 
 {
-	int r = rand() % (obj->arrTail+1);
-	return obj->arr[r];
+    int r = rand() % (obj->arr_tail+1);
+    return obj->arr[r];
 }
 
 void randomizedSetFree(RandomizedSet* obj) 
 {
-	for (int i = 0; i < HASH_TABE_SIZE; i++)
-	{
-		NODE *tmpDel = obj->bucket[i];
-		if (tmpDel)
-		{
-			NODE *tmp = tmpDel->next;
-			free(tmpDel);
-			tmpDel = tmp;
-		}
-	}
-	free(obj->bucket);
-	free(obj->arr);
-	free(obj);    
+    for (int i = 0; i < obj->size; i++){
+        node_t *cur = obj->bucket[i].next;
+        while (cur) {
+            node_t *del = cur; 
+            cur = cur->next;
+            free(del);
+        }
+    }
+    free(obj->bucket);
+    free(obj->arr);
+    free(obj);    
 }
-
-/**
- * Your RandomizedSet struct will be instantiated and called as such:
- * RandomizedSet* obj = randomizedSetCreate();
- * bool param_1 = randomizedSetInsert(obj, val);
-
- * bool param_2 = randomizedSetRemove(obj, val);
-
- * int param_3 = randomizedSetGetRandom(obj);
-
- * randomizedSetFree(obj);
- */
